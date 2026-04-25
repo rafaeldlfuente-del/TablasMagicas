@@ -1,0 +1,5 @@
+{
+  "name": "Tablas Mágicas Offline",
+  "description": "Una aplicación educativa para practicar las tablas de multiplicar que funciona totalmente sin conexión y guarda tus récords localmente.",
+  "requestFramePermissions": []
+}
