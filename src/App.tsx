@@ -16,10 +16,13 @@ import {
   Star,
   Sparkles,
   Smartphone,
-  RotateCw
+  RotateCw,
+  GraduationCap,
+  BookOpen,
+  ArrowLeft
 } from 'lucide-react';
 
-type Step = 'setup' | 'quiz' | 'results';
+type Step = 'setup' | 'quiz' | 'results' | 'learn';
 type Mode = 'order' | 'random';
 
 const APP_VERSION = '1.0.1'; // Increment this to force a reload
@@ -38,6 +41,7 @@ interface ErrorRecord {
 
 export default function App() {
   const [step, setStep] = useState<Step>('setup');
+  const [learningTable, setLearningTable] = useState<number | null>(null);
 
   // PWA Update logic
   useRegisterSW({
@@ -348,6 +352,16 @@ export default function App() {
                       {isTimedMode ? 'Con Tiempo ⏰' : 'Sin Tiempo ⏳'}
                     </button>
                   </div>
+
+                  <div className="bg-slate-50 p-4 md:p-8 rounded-2xl md:rounded-[3rem] border-2 border-slate-100 shadow-inner">
+                    <button
+                      onClick={() => setStep('learn')}
+                      className="w-full py-3 md:py-8 px-4 rounded-xl md:rounded-[2rem] text-sm md:text-2xl font-black transition-all border-b-2 md:border-b-8 flex items-center justify-center gap-4 md:gap-6 bg-sky-400 text-white border-sky-600 shadow-lg hover:bg-sky-500 -translate-y-0.5"
+                    >
+                      <BookOpen className="w-5 h-5 md:w-8 md:h-8" />
+                      Modo Aprendizaje 📚
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-auto pt-6">
@@ -625,6 +639,90 @@ export default function App() {
                 </div>
               )}
             </div>
+          </motion.div>
+        )}
+        {step === 'learn' && (
+          <motion.div 
+            key="learn"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="max-w-4xl w-full h-[95dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-10 border-4 md:border-8 border-sky-100 relative overflow-hidden flex flex-col landscape:max-w-7xl landscape:h-[90vh]"
+          >
+            <div className="flex justify-between items-center mb-4 md:mb-10 flex-shrink-0">
+              <button 
+                onClick={() => {
+                  if (learningTable) setLearningTable(null);
+                  else setStep('setup');
+                }}
+                className="p-2 md:p-5 bg-white text-slate-400 rounded-xl md:rounded-[2rem] hover:bg-slate-50 transition-all border-b-2 md:border-b-4 border-slate-100 active:translate-y-1 active:border-b-0 shadow-sm"
+              >
+                <ArrowLeft className="w-5 h-5 md:w-10 md:h-10" />
+              </button>
+              <h2 className="text-xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">
+                {learningTable ? `Tabla del ${learningTable}` : 'Modo Aprendizaje'}
+              </h2>
+              <button 
+                onClick={() => setStep('setup')}
+                className="p-2 md:p-5 bg-white text-slate-400 rounded-xl md:rounded-[2rem] hover:bg-slate-50 transition-all border-b-2 md:border-b-4 border-slate-100 active:translate-y-1 active:border-b-0 shadow-sm"
+              >
+                <Home className="w-5 h-5 md:w-10 md:h-10" />
+              </button>
+            </div>
+
+            {!learningTable ? (
+              <div className="flex-1 flex flex-col items-center justify-center">
+                <p className="text-slate-400 text-lg md:text-3xl mb-8 font-medium">Pulsa una tabla para estudiarla ✨</p>
+                <div className="grid grid-cols-3 gap-4 md:gap-8 w-full max-w-2xl px-4 pb-8">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num, idx) => (
+                    <motion.button
+                      key={num}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setLearningTable(num)}
+                      className={`
+                        py-6 md:py-12 text-3xl md:text-7xl font-black rounded-2xl md:rounded-[2.5rem] transition-all border-b-4 md:border-b-[12px]
+                        ${tableColors[idx]} border-slate-200 shadow-lg shadow-slate-100
+                      `}
+                    >
+                      {num}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 flex-1 overflow-y-auto pr-4 custom-scrollbar pb-8">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    <motion.div
+                      key={num}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: num * 0.05 }}
+                      className={`p-4 md:p-8 rounded-[2rem] flex justify-between items-center border-2 border-slate-100 shadow-sm ${tableColors[learningTable - 1].split(' ')[0]} bg-opacity-30`}
+                    >
+                      <div className="flex items-center gap-4 md:gap-8">
+                        <span className="text-2xl md:text-5xl font-black text-slate-400">{learningTable}</span>
+                        <span className="text-xl md:text-4xl font-bold text-slate-300">×</span>
+                        <span className="text-2xl md:text-5xl font-black text-slate-500">{num}</span>
+                      </div>
+                      <div className="flex items-center gap-4 md:gap-8">
+                        <span className="text-xl md:text-4xl font-bold text-slate-300">=</span>
+                        <span className="text-3xl md:text-6xl font-black text-indigo-500">{learningTable * num}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="mt-4 md:mt-8 pt-4 border-t border-slate-50">
+                  <button 
+                    onClick={() => setLearningTable(null)}
+                    className="w-full py-4 md:py-8 bg-sky-400 text-white text-xl md:text-3xl font-black rounded-2xl md:rounded-[2.5rem] shadow-xl border-b-4 md:border-b-[12px] border-sky-600 hover:bg-sky-500 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-3 md:gap-4"
+                  >
+                    <BookOpen className="w-6 h-6 md:w-10 md:h-10" /> ELEGIR OTRA TABLA
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
