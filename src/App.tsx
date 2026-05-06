@@ -295,7 +295,7 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="max-w-4xl w-full h-full md:max-h-[95dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-10 border-4 md:border-8 border-indigo-100 flex flex-col overflow-hidden landscape:max-w-7xl landscape:h-[90vh]"
+            className="max-w-4xl w-full h-full md:max-h-[90dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-10 border-4 md:border-8 border-indigo-100 flex flex-col overflow-hidden landscape:max-w-7xl landscape:h-[90vh]"
           >
             <div className="flex flex-col landscape:flex-row h-full gap-4 md:gap-10">
               {/* Left Column: Title & Modes */}
@@ -306,20 +306,20 @@ export default function App() {
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ type: "spring", stiffness: 260, damping: 20 }}
                   >
-                    <h1 className="text-4xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 mb-1 md:mb-2 tracking-tight drop-shadow-sm">
+                    <h1 className="text-3xl md:text-5xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 mb-1 md:mb-2 tracking-tight drop-shadow-sm">
                       ¡Tablas Mágicas! 🪄
                     </h1>
                   </motion.div>
-                  <p className="text-sm md:text-2xl text-slate-400 font-medium italic">¡Aprender es una aventura! ✨</p>
+                  <p className="text-sm md:text-xl text-slate-400 font-medium italic">¡Aprender es una aventura! ✨</p>
                 </div>
 
-                <div className="flex flex-col gap-4 md:gap-8 flex-1 justify-center">
-                  <div className="bg-slate-50 p-4 md:p-8 rounded-2xl md:rounded-[3rem] border-2 border-slate-100 shadow-inner">
-                    <h3 className="text-xs md:text-xl font-black text-slate-500 mb-4 md:mb-6 uppercase tracking-widest text-center landscape:text-left">Modo de Juego</h3>
-                    <div className="flex flex-row gap-4 md:gap-6">
+                <div className="flex flex-col gap-3 md:gap-6 flex-1 justify-center">
+                  <div className="bg-slate-50 p-3 md:p-6 rounded-2xl md:rounded-[2rem] border-2 border-slate-100 shadow-inner">
+                    <h3 className="text-[10px] md:text-sm font-black text-slate-500 mb-3 md:mb-4 uppercase tracking-widest text-center landscape:text-left">Modo de Juego</h3>
+                    <div className="flex flex-row gap-3 md:gap-4">
                       <button
                         onClick={() => setMode('order')}
-                        className={`flex-1 py-3 md:py-8 px-2 rounded-xl md:rounded-[2rem] text-sm md:text-2xl font-black transition-all border-b-2 md:border-b-8 ${
+                        className={`flex-1 py-2 md:py-4 px-2 rounded-xl md:rounded-[1.5rem] text-sm md:text-xl font-black transition-all border-b-2 md:border-b-4 ${
                           mode === 'order' 
                             ? 'bg-emerald-400 text-white border-emerald-600 shadow-lg -translate-y-0.5' 
                             : 'bg-white text-slate-400 border-slate-100'
@@ -329,7 +329,7 @@ export default function App() {
                       </button>
                       <button
                         onClick={() => setMode('random')}
-                        className={`flex-1 py-3 md:py-8 px-2 rounded-xl md:rounded-[2rem] text-sm md:text-2xl font-black transition-all border-b-2 md:border-b-8 ${
+                        className={`flex-1 py-2 md:py-4 px-2 rounded-xl md:rounded-[1.5rem] text-sm md:text-xl font-black transition-all border-b-2 md:border-b-4 ${
                           mode === 'random' 
                             ? 'bg-violet-400 text-white border-violet-600 shadow-lg -translate-y-0.5' 
                             : 'bg-white text-slate-400 border-slate-100'
@@ -340,10 +340,10 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 p-4 md:p-8 rounded-2xl md:rounded-[3rem] border-2 border-slate-100 shadow-inner">
+                  <div className="bg-slate-50 p-3 md:p-6 rounded-2xl md:rounded-[2rem] border-2 border-slate-100 shadow-inner">
                     <button
                       onClick={() => setIsTimedMode(!isTimedMode)}
-                      className={`w-full py-3 md:py-8 px-4 rounded-xl md:rounded-[2rem] text-sm md:text-2xl font-black transition-all border-b-2 md:border-b-8 flex items-center justify-center gap-4 md:gap-6 ${
+                      className={`w-full py-2 md:py-4 px-4 rounded-xl md:rounded-[1.5rem] text-sm md:text-xl font-black transition-all border-b-2 md:border-b-4 flex items-center justify-center gap-4 md:gap-6 ${
                         isTimedMode 
                           ? 'bg-rose-400 text-white border-rose-600 shadow-lg -translate-y-0.5' 
                           : 'bg-white text-slate-400 border-slate-100'
@@ -353,25 +353,25 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="bg-slate-50 p-4 md:p-8 rounded-2xl md:rounded-[3rem] border-2 border-slate-100 shadow-inner">
+                  <div className="bg-slate-50 p-3 md:p-6 rounded-2xl md:rounded-[2rem] border-2 border-slate-100 shadow-inner">
                     <button
                       onClick={() => setStep('learn')}
-                      className="w-full py-3 md:py-8 px-4 rounded-xl md:rounded-[2rem] text-sm md:text-2xl font-black transition-all border-b-2 md:border-b-8 flex items-center justify-center gap-4 md:gap-6 bg-sky-400 text-white border-sky-600 shadow-lg hover:bg-sky-500 -translate-y-0.5"
+                      className="w-full py-2 md:py-4 px-4 rounded-xl md:rounded-[1.5rem] text-sm md:text-xl font-black transition-all border-b-2 md:border-b-4 flex items-center justify-center gap-4 md:gap-6 bg-sky-400 text-white border-sky-600 shadow-lg hover:bg-sky-500 -translate-y-0.5"
                     >
-                      <BookOpen className="w-5 h-5 md:w-8 md:h-8" />
-                      Modo Aprendizaje 📚
+                      <BookOpen className="w-4 h-4 md:w-6 md:h-6" />
+                      Aprendizaje 📚
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-auto pt-6">
+                <div className="mt-4 pt-4">
                   <motion.button
                     whileHover={selectedTables.length > 0 ? { scale: 1.02 } : {}}
                     whileTap={selectedTables.length > 0 ? { scale: 0.98 } : {}}
                     disabled={selectedTables.length === 0}
                     onClick={() => selectedTables.length > 0 && startQuiz(selectedTables, mode)}
                     className={`
-                      w-full py-4 md:py-10 rounded-2xl md:rounded-[4rem] text-2xl md:text-6xl font-black transition-all shadow-xl border-b-4 md:border-b-[16px]
+                      w-full py-3 md:py-6 rounded-2xl md:rounded-[2rem] text-xl md:text-4xl font-black transition-all shadow-xl border-b-4 md:border-b-8
                       ${selectedTables.length > 0 
                         ? 'bg-gradient-to-r from-orange-400 to-amber-400 text-white border-orange-600 hover:from-orange-500 hover:to-amber-500' 
                         : 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed'
@@ -386,17 +386,17 @@ export default function App() {
               {/* Right Column: Table Grid */}
               <div className="flex flex-col landscape:w-[60%] h-full">
                 <div className="flex justify-between items-end mb-4 md:mb-6">
-                  <h2 className="text-xl md:text-3xl font-black text-slate-700">Elige tus tablas:</h2>
+                  <h2 className="text-xl md:text-2xl font-black text-slate-700">Elige tus tablas:</h2>
                   {selectedTables.length > 0 && (
                     <button 
                       onClick={() => setSelectedTables([])}
-                      className="text-xs md:text-lg font-bold text-rose-400 hover:text-rose-500 transition-colors flex items-center gap-2"
+                      className="text-xs md:text-sm font-bold text-rose-400 hover:text-rose-500 transition-colors flex items-center gap-2"
                     >
-                      <RotateCcw className="w-4 h-4 md:w-6 md:h-6" /> Limpiar
+                      <RotateCcw className="w-3 h-3 md:w-5 md:h-5" /> Limpiar
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-3 gap-4 md:gap-6 flex-1 min-h-0 p-1">
+                <div className="grid grid-cols-3 gap-3 md:gap-4 flex-1 min-h-0 p-1">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num, idx) => (
                     <motion.button
                       key={num}
@@ -404,7 +404,7 @@ export default function App() {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => toggleTable(num)}
                       className={`
-                        h-full min-h-[60px] md:h-auto text-3xl md:text-7xl font-black rounded-2xl md:rounded-[2.5rem] transition-all border-b-4 md:border-b-[12px]
+                        h-full min-h-[50px] md:h-auto text-3xl md:text-5xl lg:text-7xl font-black rounded-xl md:rounded-[2rem] transition-all border-b-4 md:border-b-8
                         ${selectedTables.includes(num) 
                           ? `${tableSelectedColors[idx]} shadow-lg -translate-y-0.5` 
                           : `${tableColors[idx]} border-slate-200`
@@ -426,7 +426,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.1 }}
-            className="max-w-4xl w-full h-full md:max-h-[95dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-10 border-4 md:border-8 border-amber-100 relative overflow-hidden flex flex-col landscape:max-w-7xl landscape:h-[90vh]"
+            className="max-w-4xl w-full h-full md:max-h-[90dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-10 border-4 md:border-8 border-amber-100 relative overflow-hidden flex flex-col landscape:max-w-7xl landscape:h-[90vh]"
           >
             {/* Progress Bar */}
             <div className="absolute top-0 left-0 w-full h-2 md:h-4 bg-slate-50">
@@ -467,10 +467,10 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex flex-col landscape:flex-row items-center justify-center gap-4 md:gap-20 flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-col landscape:flex-row items-center justify-center gap-4 md:gap-10 lg:gap-20 flex-1 min-h-0 overflow-hidden">
               {/* Question Area */}
               <div className="flex-1 text-center flex flex-col justify-center items-center h-full landscape:w-1/2">
-                <div className="text-5xl md:text-[10rem] lg:text-[12rem] font-black text-slate-800 flex items-center justify-center gap-4 md:gap-16 mb-4 md:mb-16">
+                <div className="text-5xl md:text-[6rem] lg:text-[10rem] font-black text-slate-800 flex items-center justify-center gap-4 md:gap-10 mb-4 md:mb-10">
                   <span>{questions[currentIndex].a}</span>
                   <span className="text-amber-400">×</span>
                   <span>{questions[currentIndex].b}</span>
@@ -480,7 +480,7 @@ export default function App() {
                   key={currentIndex}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="w-32 md:w-[30rem] h-16 md:h-48 text-4xl md:text-[7rem] flex items-center justify-center font-black rounded-2xl md:rounded-[4rem] border-2 md:border-[12px] border-indigo-100 bg-indigo-50 text-indigo-600 shadow-inner"
+                  className="w-32 md:w-64 lg:w-[25rem] h-16 md:h-24 lg:h-40 text-4xl md:text-[4rem] lg:text-[7rem] flex items-center justify-center font-black rounded-2xl md:rounded-[2rem] border-2 md:border-8 lg:border-[12px] border-indigo-100 bg-indigo-50 text-indigo-600 shadow-inner"
                 >
                   {userInput || '?'}
                 </motion.div>
@@ -490,14 +490,14 @@ export default function App() {
               <div className="flex-1 w-full max-w-lg landscape:w-1/2 h-full flex flex-col justify-center min-h-0">
                 <div className="flex-1 flex flex-col justify-center min-h-0">
                   {!feedback ? (
-                    <div className="grid grid-cols-3 gap-3 md:gap-6">
+                    <div className="grid grid-cols-3 gap-2 md:gap-4 lg:gap-6">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
                         <motion.button
                           key={num}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => setUserInput(prev => prev.length < 3 ? prev + num : prev)}
                           className={`
-                            h-12 md:h-24 text-xl md:text-5xl font-black rounded-xl md:rounded-[2rem] bg-white text-indigo-600 border-b-2 md:border-b-[10px] border-indigo-100 hover:bg-indigo-50 active:translate-y-1 active:border-b-0 transition-all shadow-sm
+                            h-11 md:h-16 lg:h-24 text-lg md:text-3xl lg:text-5xl font-black rounded-xl md:rounded-[1.5rem] bg-white text-indigo-600 border-b-2 md:border-b-4 lg:border-b-[10px] border-indigo-100 hover:bg-indigo-50 active:translate-y-1 active:border-b-0 transition-all shadow-sm
                             ${num === 0 ? 'col-start-2' : ''}
                           `}
                         >
@@ -507,7 +507,7 @@ export default function App() {
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setUserInput(prev => prev.slice(0, -1))}
-                        className="h-12 md:h-24 text-xl md:text-5xl font-black rounded-xl md:rounded-[2rem] bg-slate-50 text-slate-400 border-b-2 md:border-b-[10px] border-slate-100 active:translate-y-1 active:border-b-0 transition-all shadow-sm"
+                        className="h-11 md:h-16 lg:h-24 text-lg md:text-3xl lg:text-5xl font-black rounded-xl md:rounded-[1.5rem] bg-slate-50 text-slate-400 border-b-2 md:border-b-4 lg:border-b-[10px] border-slate-100 active:translate-y-1 active:border-b-0 transition-all shadow-sm"
                       >
                         ⌫
                       </motion.button>
@@ -516,32 +516,32 @@ export default function App() {
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.9, y: 20 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
-                      className={`w-full p-6 md:p-12 rounded-2xl md:rounded-[4rem] text-center border-2 md:border-[12px] shadow-2xl ${
+                      className={`w-full p-4 md:p-8 lg:p-12 rounded-2xl md:rounded-[2rem] text-center border-2 md:border-8 lg:border-[12px] shadow-2xl ${
                         feedback.type === 'correct' ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
                       }`}
                     >
-                      <div className={`text-2xl md:text-7xl font-black mb-2 md:mb-6 ${
+                      <div className={`text-xl md:text-4xl lg:text-7xl font-black mb-2 md:mb-6 ${
                         feedback.type === 'correct' ? 'text-emerald-500' : 'text-rose-500'
                       }`}>
                         {feedback.message}
                       </div>
                       {feedback.type === 'incorrect' && (
-                        <div className="text-lg md:text-5xl font-black text-slate-600">
-                          Respuesta: <span className="text-rose-500 text-3xl md:text-[8rem] leading-none">{feedback.correctAnswer}</span>
+                        <div className="text-lg md:text-3xl lg:text-5xl font-black text-slate-600">
+                          Respuesta: <span className="text-rose-500 text-3xl md:text-[4rem] lg:text-[8rem] leading-none">{feedback.correctAnswer}</span>
                         </div>
                       )}
                     </motion.div>
                   )}
                 </div>
 
-                <div className="mt-6 md:mt-16">
+                <div className="mt-4 md:mt-8">
                   {!feedback ? (
                     <motion.button
                       whileHover={userInput !== '' ? { scale: 1.02 } : {}}
                       whileTap={userInput !== '' ? { scale: 0.98 } : {}}
                       onClick={() => handleAnswer()}
                       disabled={userInput === ''}
-                      className={`w-full py-4 md:py-10 text-white text-xl md:text-5xl font-black rounded-2xl md:rounded-[3rem] shadow-xl border-b-4 md:border-b-[16px] transition-all ${
+                      className={`w-full py-3 md:py-6 lg:py-10 text-white text-lg md:text-3xl lg:text-5xl font-black rounded-2xl md:rounded-[2rem] shadow-xl border-b-4 md:border-b-8 lg:border-b-[16px] transition-all ${
                         userInput !== '' ? 'bg-indigo-500 border-indigo-700 hover:bg-indigo-600' : 'bg-slate-100 border-slate-200 text-slate-300'
                       }`}
                     >
@@ -552,11 +552,11 @@ export default function App() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={nextQuestion}
-                      className={`w-full py-4 md:py-10 text-white text-xl md:text-5xl font-black rounded-2xl md:rounded-[3rem] shadow-xl border-b-4 md:border-b-[16px] transition-all flex items-center justify-center gap-4 md:gap-8 ${
+                      className={`w-full py-3 md:py-6 lg:py-10 text-white text-lg md:text-3xl lg:text-5xl font-black rounded-2xl md:rounded-[2rem] shadow-xl border-b-4 md:border-b-8 lg:border-b-[16px] transition-all flex items-center justify-center gap-4 md:gap-8 ${
                         feedback.type === 'correct' ? 'bg-emerald-500 border-emerald-700 hover:bg-emerald-600' : 'bg-rose-500 border-rose-700 hover:bg-rose-600'
                       }`}
                     >
-                      SIGUIENTE ({autoAdvanceSeconds}s) <ArrowRight className="w-6 h-6 md:w-16 md:h-16" />
+                      SIGUIENTE ({autoAdvanceSeconds}s) <ArrowRight className="w-5 h-5 md:w-10 lg:w-16 md:h-10 lg:h-16" />
                     </motion.button>
                   )}
                 </div>
@@ -570,72 +570,80 @@ export default function App() {
             key="results"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl w-full max-h-full bg-white rounded-[2.5rem] shadow-2xl p-4 md:p-12 border-4 md:border-8 border-emerald-100 flex flex-col overflow-hidden landscape:max-w-7xl landscape:h-[90vh]"
+            className="max-w-4xl w-full max-h-full md:max-h-[85vh] bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl p-4 md:p-8 lg:p-12 border-4 md:border-8 border-emerald-100 flex flex-col overflow-hidden landscape:max-w-7xl landscape:h-[90vh]"
           >
-            <div className="text-center mb-4 md:mb-10 flex-shrink-0">
-              <div className="inline-block p-2 md:p-6 bg-amber-50 rounded-[2rem] mb-2 md:mb-6 shadow-inner">
-                <Trophy className="w-10 h-10 md:w-24 md:h-24 text-amber-400" />
+            <div className="text-center mb-4 md:mb-6 flex-shrink-0">
+              <div className="inline-block p-2 md:p-4 bg-amber-50 rounded-[1.5rem] mb-2 md:mb-4 shadow-inner">
+                <Trophy className="w-8 h-8 md:w-16 lg:w-24 md:h-16 lg:h-24 text-amber-400" />
               </div>
-              <h2 className="text-3xl md:text-7xl font-black text-slate-800 mb-1 md:mb-4 tracking-tight">¡Genial! 🌈</h2>
-              <p className="text-sm md:text-3xl text-slate-400 font-bold">
+              <h2 className="text-2xl md:text-4xl lg:text-6xl font-black text-slate-800 mb-1 md:mb-2 tracking-tight">¡Genial! 🌈</h2>
+              <p className="text-sm md:text-xl lg:text-2xl text-slate-400 font-bold">
                 {selectedTables.length === 1 
                   ? `Tabla del ${selectedTables[0]}` 
                   : `Repaso de tablas`}
               </p>
             </div>
 
-            <div className="flex flex-col landscape:flex-row gap-6 md:gap-12 flex-1 min-h-0 overflow-y-auto landscape:overflow-hidden custom-scrollbar">
+            <div className="flex flex-col landscape:flex-row gap-4 md:gap-8 lg:gap-12 flex-1 min-h-0 overflow-y-auto landscape:overflow-hidden custom-scrollbar">
               {/* Left Side: Score & Buttons */}
-              <div className="flex-1 flex flex-col gap-6 md:gap-10 landscape:w-1/2">
-                <div className="bg-slate-50 rounded-[2.5rem] p-6 md:p-12 text-center border-2 border-slate-100 flex flex-col md:flex-row gap-6 md:gap-10 justify-around items-center shadow-inner flex-shrink-0">
+              <div className="flex-1 flex flex-col gap-4 md:gap-6 lg:gap-10 landscape:w-1/2">
+                <div className="bg-slate-50 rounded-[1.5rem] md:rounded-[2.5rem] p-4 md:p-8 lg:p-12 text-center border-2 border-slate-100 flex flex-col md:flex-row gap-4 md:gap-8 lg:gap-10 justify-around items-center shadow-inner flex-shrink-0">
                   <div>
-                    <div className="text-xs md:text-xl font-black text-slate-400 mb-2 uppercase tracking-widest">Puntos</div>
-                    <div className="text-5xl md:text-[8rem] font-black text-indigo-500 leading-none">
-                      {score}<span className="text-lg md:text-3xl text-slate-300">/{questions.length}</span>
+                    <div className="text-[10px] md:text-sm lg:text-lg font-black text-slate-400 mb-1 uppercase tracking-widest">Puntos</div>
+                    <div className="text-4xl md:text-6xl lg:text-[7rem] font-black text-indigo-500 leading-none">
+                      {score}<span className="text-sm md:text-xl lg:text-2xl text-slate-300">/{questions.length}</span>
                     </div>
                   </div>
-                  <div className="border-t-2 md:border-t-0 md:border-l-2 border-slate-200 pt-4 md:pt-0 md:pl-10">
-                    <div className="text-xs md:text-xl font-black text-amber-500 mb-2 uppercase tracking-widest flex items-center gap-2 justify-center md:justify-start">
-                      <Sparkles className="w-4 h-4 md:w-8 md:h-8" /> Récord
+                  <div className="border-t-2 md:border-t-0 md:border-l-2 border-slate-200 pt-3 md:pt-0 md:pl-8 lg:pl-10">
+                    <div className="text-[10px] md:text-sm lg:text-lg font-black text-amber-500 mb-1 uppercase tracking-widest flex items-center gap-2 justify-center md:justify-start">
+                      <Sparkles className="w-3 h-3 md:w-6 lg:w-8 md:h-6 lg:h-8" /> Récord
                     </div>
-                    <div className="text-4xl md:text-7xl font-black text-amber-400">
+                    <div className="text-3xl md:text-5xl lg:text-6xl font-black text-amber-400">
                       {highScore}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4 md:gap-6 mt-auto">
+                <div className="flex flex-col gap-3 md:gap-4 mt-auto">
                   {errors.length > 0 && (
                     <button
                       onClick={startRetryErrors}
-                      className="w-full py-4 md:py-8 bg-orange-400 text-white text-xl md:text-3xl font-black rounded-[2.5rem] shadow-xl border-b-4 md:border-b-[12px] border-orange-600 hover:bg-orange-500 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-3 md:gap-4"
+                      className="w-full py-3 md:py-4 lg:py-6 bg-orange-400 text-white text-lg md:text-2xl font-black rounded-xl md:rounded-[2rem] shadow-xl border-b-4 md:border-b-8 bg-gradient-to-r from-orange-400 to-amber-500 border-orange-600 hover:from-orange-500 hover:to-amber-600 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-3 md:gap-4"
                     >
-                      <RotateCcw className="w-6 h-6 md:w-10 md:h-10" /> REPASAR FALLOS
+                      <RotateCcw className="w-5 h-5 md:w-8 lg:w-10 md:h-5 lg:h-10" /> REPASAR FALLOS
                     </button>
                   )}
                   <button
                     onClick={() => setStep('setup')}
-                    className="w-full py-4 md:py-8 bg-indigo-400 text-white text-xl md:text-3xl font-black rounded-[2.5rem] shadow-xl border-b-4 md:border-b-[12px] border-indigo-600 hover:bg-indigo-500 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-3 md:gap-4"
+                    className="w-full py-3 md:py-4 lg:py-6 bg-indigo-400 text-white text-lg md:text-2xl font-black rounded-xl md:rounded-[2rem] shadow-xl border-b-4 md:border-b-8 bg-gradient-to-r from-indigo-400 to-violet-500 border-indigo-600 hover:from-indigo-500 hover:to-violet-600 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-3 md:gap-4"
                   >
-                    <Home className="w-6 h-6 md:w-10 md:h-10" /> INICIO
+                    <Home className="w-5 h-5 md:w-8 lg:w-10 md:h-5 lg:h-10" /> INICIO
                   </button>
                 </div>
               </div>
 
               {/* Right Side: Error List */}
-              {errors.length > 0 && (
+              {errors.length > 0 ? (
                 <div className="flex-1 flex flex-col min-h-0 landscape:w-1/2">
-                  <h3 className="text-xl md:text-4xl font-black text-rose-400 mb-4 md:mb-8 flex items-center gap-3 md:gap-4 flex-shrink-0">
-                    <XCircle className="w-6 h-6 md:w-12 md:h-12" /> ¡A practicar!
+                  <h3 className="text-lg md:text-2xl font-black text-rose-400 mb-2 md:mb-4 lg:mb-6 flex items-center gap-2 md:gap-3 flex-shrink-0">
+                    <XCircle className="w-5 h-5 md:w-8 lg:w-10 md:h-5 lg:h-10" /> ¡A practicar!
                   </h3>
-                  <div className="grid grid-cols-1 gap-3 md:gap-4 flex-1 min-h-0 overflow-y-auto pr-4 custom-scrollbar">
+                  <div className="grid grid-cols-1 gap-2 md:gap-3 flex-1 min-h-0 overflow-y-auto pr-2 md:pr-4 custom-scrollbar">
                     {errors.map((error, idx) => (
-                      <div key={idx} className="bg-rose-50 p-4 md:p-8 rounded-[2rem] flex justify-between items-center border-2 border-rose-100 shadow-sm">
-                        <span className="text-lg md:text-3xl font-black text-slate-600">{error.question} = ?</span>
-                        <span className="text-lg md:text-3xl font-black text-rose-500">¡Es {error.correct}!</span>
+                      <div key={idx} className="bg-rose-50 p-3 md:p-4 lg:p-6 rounded-xl md:rounded-[1.5rem] flex justify-between items-center border-2 border-rose-100 shadow-sm">
+                        <span className="text-sm md:text-xl lg:text-2xl font-black text-slate-600">{error.question} = ?</span>
+                        <span className="text-sm md:text-xl lg:text-2xl font-black text-rose-500">¡Es {error.correct}!</span>
                       </div>
                     ))}
                   </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center bg-emerald-50 rounded-[2rem] p-8 landscape:w-1/2">
+                  <div className="p-6 bg-white rounded-full shadow-lg mb-6">
+                    <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+                  </div>
+                  <h3 className="text-2xl md:text-4xl font-black text-emerald-600 mb-2">¡Perfecto!</h3>
+                  <p className="text-emerald-500 text-lg font-bold">¡No has tenido fallos! ✨</p>
                 </div>
               )}
             </div>
@@ -647,7 +655,7 @@ export default function App() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="max-w-4xl w-full h-[95dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-10 border-4 md:border-8 border-sky-100 relative overflow-hidden flex flex-col landscape:max-w-7xl landscape:h-[90vh]"
+            className="max-w-4xl w-full h-[90dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-10 border-4 md:border-8 border-sky-100 relative overflow-hidden flex flex-col landscape:max-w-7xl landscape:h-[90vh]"
           >
             <div className="flex justify-between items-center mb-4 md:mb-10 flex-shrink-0">
               <button 
@@ -671,9 +679,9 @@ export default function App() {
             </div>
 
             {!learningTable ? (
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <p className="text-slate-400 text-lg md:text-3xl mb-8 font-medium">Pulsa una tabla para estudiarla ✨</p>
-                <div className="grid grid-cols-3 gap-4 md:gap-8 w-full max-w-2xl px-4 pb-8">
+              <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar">
+                <p className="text-slate-400 text-lg md:text-2xl mb-8 font-medium">Pulsa una tabla para estudiarla ✨</p>
+                <div className="grid grid-cols-3 gap-4 md:gap-6 w-full max-w-2xl px-4 pb-8">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num, idx) => (
                     <motion.button
                       key={num}
@@ -681,7 +689,7 @@ export default function App() {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setLearningTable(num)}
                       className={`
-                        py-6 md:py-12 text-3xl md:text-7xl font-black rounded-2xl md:rounded-[2.5rem] transition-all border-b-4 md:border-b-[12px]
+                        py-4 md:py-8 lg:py-10 text-3xl md:text-5xl lg:text-7xl font-black rounded-2xl md:rounded-[2rem] transition-all border-b-4 md:border-b-8
                         ${tableColors[idx]} border-slate-200 shadow-lg shadow-slate-100
                       `}
                     >
@@ -692,33 +700,33 @@ export default function App() {
               </div>
             ) : (
               <div className="flex-1 flex flex-col min-h-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 flex-1 overflow-y-auto pr-4 custom-scrollbar pb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 flex-1 overflow-y-auto pr-2 md:pr-4 custom-scrollbar pb-4 md:pb-8">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                     <motion.div
                       key={num}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: num * 0.05 }}
-                      className={`p-4 md:p-8 rounded-[2rem] flex justify-between items-center border-2 border-slate-100 shadow-sm ${tableColors[learningTable - 1].split(' ')[0]} bg-opacity-30`}
+                      className={`p-3 md:p-6 lg:p-8 rounded-xl md:rounded-[2rem] flex justify-between items-center border-2 border-slate-100 shadow-sm ${tableColors[learningTable - 1].split(' ')[0]} bg-opacity-30`}
                     >
-                      <div className="flex items-center gap-4 md:gap-8">
-                        <span className="text-2xl md:text-5xl font-black text-slate-400">{learningTable}</span>
-                        <span className="text-xl md:text-4xl font-bold text-slate-300">×</span>
-                        <span className="text-2xl md:text-5xl font-black text-slate-500">{num}</span>
+                      <div className="flex items-center gap-3 md:gap-6 lg:gap-8">
+                        <span className="text-xl md:text-3xl lg:text-5xl font-black text-slate-400">{learningTable}</span>
+                        <span className="text-lg md:text-2xl lg:text-4xl font-bold text-slate-300">×</span>
+                        <span className="text-xl md:text-3xl lg:text-5xl font-black text-slate-500">{num}</span>
                       </div>
-                      <div className="flex items-center gap-4 md:gap-8">
-                        <span className="text-xl md:text-4xl font-bold text-slate-300">=</span>
-                        <span className="text-3xl md:text-6xl font-black text-indigo-500">{learningTable * num}</span>
+                      <div className="flex items-center gap-3 md:gap-6 lg:gap-8">
+                        <span className="text-lg md:text-2xl lg:text-4xl font-bold text-slate-300">=</span>
+                        <span className="text-2xl md:text-4xl lg:text-6xl font-black text-indigo-500">{learningTable * num}</span>
                       </div>
                     </motion.div>
                   ))}
                 </div>
-                <div className="mt-4 md:mt-8 pt-4 border-t border-slate-50">
+                <div className="mt-3 md:mt-6 pt-3 md:pt-4 border-t border-slate-50">
                   <button 
                     onClick={() => setLearningTable(null)}
-                    className="w-full py-4 md:py-8 bg-sky-400 text-white text-xl md:text-3xl font-black rounded-2xl md:rounded-[2.5rem] shadow-xl border-b-4 md:border-b-[12px] border-sky-600 hover:bg-sky-500 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-3 md:gap-4"
+                    className="w-full py-3 md:py-6 lg:py-8 bg-sky-400 text-white text-lg md:text-2xl lg:text-3xl font-black rounded-xl md:rounded-[2rem] shadow-xl border-b-4 md:border-b-8 lg:border-b-[12px] border-sky-600 hover:bg-sky-500 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-3 md:gap-4"
                   >
-                    <BookOpen className="w-6 h-6 md:w-10 md:h-10" /> ELEGIR OTRA TABLA
+                    <BookOpen className="w-5 h-5 md:w-8 lg:w-10 md:h-5 lg:h-10" /> ELEGIR OTRA TABLA
                   </button>
                 </div>
               </div>
