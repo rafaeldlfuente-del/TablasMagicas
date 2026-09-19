@@ -29,7 +29,7 @@ import {
 type Step = 'setup' | 'quiz' | 'results' | 'learn';
 type Mode = 'order' | 'reverse' | 'random';
 
-const APP_VERSION = '1.0.5';
+const APP_VERSION = '1.0.6';
 
 interface Question {
   a: number;
@@ -316,14 +316,14 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
-              className="w-full h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl p-3 sm:p-5 md:p-6 lg:p-8 border-2 sm:border-4 md:border-8 border-indigo-100 flex flex-col justify-between md:justify-center md:gap-5 lg:gap-6 overflow-hidden"
+              className="w-full max-w-5xl lg:max-w-6xl max-h-[96dvh] bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.25rem] shadow-xl md:shadow-2xl p-3.5 sm:p-5 md:p-6 lg:p-7 border-2 sm:border-4 md:border-8 border-indigo-100 flex flex-col justify-between gap-3 sm:gap-4 md:gap-5 my-auto overflow-y-auto"
             >
               {/* Top Bar / Header */}
-              <div className="flex items-center justify-between gap-2 pb-2 sm:pb-3 border-b border-slate-100 flex-shrink-0">
-                <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center justify-between gap-2 pb-2.5 sm:pb-3 border-b border-slate-100 flex-shrink-0">
+                <div className="flex items-center gap-2.5 sm:gap-3">
                   <span className="text-2xl sm:text-3xl md:text-4xl">🪄</span>
                   <div>
-                    <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 leading-tight">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 leading-tight">
                       ¡Tablas Mágicas!
                     </h1>
                     <p className="text-[11px] sm:text-xs md:text-sm text-slate-400 font-medium hidden sm:block">
@@ -335,200 +335,190 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setStep('learn')}
-                    className="py-1.5 sm:py-2 px-2.5 sm:px-4 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                    className="py-1.5 sm:py-2 px-3 sm:px-4 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 transition-all shadow-xs active:scale-95"
                     title="Ver tablas de multiplicar"
                   >
-                    <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-sky-600" />
-                    <span>Estudio</span>
+                    <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-sky-600" />
+                    <span>Modo Estudio</span>
                   </button>
-                  <span className="text-[10px] sm:text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                  <span className="text-[10px] sm:text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 font-bold">
                     v{APP_VERSION}
                   </span>
                 </div>
               </div>
 
-              {/* Main Content Area */}
-              <div className="flex-1 min-h-0 py-1 sm:py-2 flex flex-col landscape:flex-row gap-2.5 sm:gap-3.5 md:gap-5 overflow-hidden md:justify-center">
-                
-                {/* 1. Tables Selection (Del 2 al 9) */}
-                <div className="flex flex-col bg-slate-50/80 p-2.5 sm:p-3.5 md:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-inner flex-shrink-0 landscape:flex-1 landscape:min-h-0 landscape:overflow-hidden">
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-2 md:mb-3 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
-                        1. Elige las tablas (2 al 9)
+              {/* 1. Tables Selection (Del 2 al 9) */}
+              <div className="flex flex-col bg-slate-50/90 p-2.5 sm:p-3.5 md:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex-shrink-0">
+                <div className="flex items-center justify-between mb-2 sm:mb-2.5 md:mb-3 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
+                      1. Elige las tablas (2 al 9)
+                    </span>
+                    {selectedTables.length > 0 && (
+                      <span className="bg-indigo-100 text-indigo-700 font-black text-[10px] sm:text-xs md:text-sm px-2.5 py-0.5 rounded-full">
+                        {selectedTables.length} {selectedTables.length === 1 ? 'tabla' : 'tablas'}
                       </span>
-                      {selectedTables.length > 0 && (
-                        <span className="bg-indigo-100 text-indigo-700 font-black text-[10px] sm:text-xs md:text-sm px-2.5 py-0.5 rounded-full">
-                          {selectedTables.length} {selectedTables.length === 1 ? 'tabla' : 'tablas'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <button
-                        onClick={selectAllTables}
-                        className="text-[11px] sm:text-xs md:text-sm font-bold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs hover:bg-indigo-50 transition-colors"
-                      >
-                        Todas
-                      </button>
-                      <button
-                        onClick={clearTables}
-                        className="text-[11px] sm:text-xs md:text-sm font-bold text-rose-500 hover:text-rose-700 bg-white px-2.5 py-1 rounded-lg border border-rose-100 shadow-2xs hover:bg-rose-50 transition-colors"
-                      >
-                        Limpiar
-                      </button>
-                    </div>
+                    )}
                   </div>
-
-                  {/* 8 Table Buttons (2 to 9) in a clean, proportional grid without stretching into empty space */}
-                  <div className="grid grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 lg:gap-3.5 landscape:flex-1 landscape:min-h-0">
-                    {AVAILABLE_TABLES.map((num) => {
-                      const isSelected = selectedTables.includes(num);
-                      const theme = TABLE_THEMES[num];
-                      return (
-                        <motion.button
-                          key={num}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => toggleTable(num)}
-                          className={`
-                            relative flex flex-col items-center justify-center rounded-xl sm:rounded-2xl font-black transition-all border-b-2 sm:border-b-4
-                            h-14 sm:h-18 md:h-24 lg:h-28 landscape:h-auto landscape:min-h-[50px]
-                            ${isSelected 
-                              ? `${theme.activeBg} ${theme.activeBorder} shadow-md -translate-y-0.5` 
-                              : `${theme.bg} ${theme.text} ${theme.border} hover:brightness-95`
-                            }
-                          `}
-                        >
-                          <span className="text-xl sm:text-3xl md:text-4xl lg:text-5xl leading-none">
-                            {num}
-                          </span>
-                          <span className={`text-[9px] sm:text-xs md:text-sm font-bold mt-0.5 sm:mt-1 opacity-90 ${isSelected ? 'text-white' : 'text-slate-500'}`}>
-                            Tabla del {num}
-                          </span>
-                          {isSelected && (
-                            <span className="absolute top-1 right-1 sm:top-2 sm:right-2 w-3.5 h-3.5 sm:w-5 sm:h-5 bg-white text-emerald-600 rounded-full flex items-center justify-center text-[10px] sm:text-xs shadow-xs">
-                              <Check className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[3]" />
-                            </span>
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 2 & 3: Game Modes & Time Options + Launch CTA */}
-                <div className="flex flex-col gap-2.5 sm:gap-3.5 md:gap-4 lg:gap-5 landscape:w-[48%] landscape:justify-between landscape:flex-1 overflow-hidden">
-                  
-                  {/* On tablet portrait (md:), Section 2 and Section 3 sit side by side! Eliminates dead spaces! */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 landscape:grid-cols-1 gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-                    
-                    {/* 2. Mode of play: En orden, En orden inverso, Aleatorio */}
-                    <div className="bg-slate-50/80 p-2.5 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-inner flex flex-col justify-between">
-                      <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider mb-1.5 sm:mb-2">
-                        2. Modo de Juego
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                        <button
-                          onClick={() => setMode('order')}
-                          className={`py-1.5 sm:py-2.5 md:py-3.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
-                            mode === 'order'
-                              ? 'bg-emerald-500 text-white border-emerald-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <ListOrdered className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">En orden</span>
-                          <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80 hidden sm:inline">1 al 10</span>
-                        </button>
-
-                        <button
-                          onClick={() => setMode('reverse')}
-                          className={`py-1.5 sm:py-2.5 md:py-3.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
-                            mode === 'reverse'
-                              ? 'bg-amber-500 text-white border-amber-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <Undo2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Inverso</span>
-                          <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80 hidden sm:inline">10 al 1</span>
-                        </button>
-
-                        <button
-                          onClick={() => setMode('random')}
-                          className={`py-1.5 sm:py-2.5 md:py-3.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
-                            mode === 'random'
-                              ? 'bg-violet-500 text-white border-violet-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <Shuffle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Aleatorio</span>
-                          <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80 hidden sm:inline">Mezclado</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 3. Time Option: Con tiempo vs Sin tiempo */}
-                    <div className="bg-slate-50/80 p-2.5 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-inner flex flex-col justify-between">
-                      <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider mb-1.5 sm:mb-2">
-                        3. Tiempo Límite
-                      </span>
-                      <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                        <button
-                          onClick={() => setIsTimedMode(false)}
-                          className={`py-2 sm:py-3 md:py-4 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
-                            !isTimedMode
-                              ? 'bg-sky-500 text-white border-sky-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <InfinityIcon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-xs sm:text-sm md:text-base font-bold">Sin tiempo</span>
-                        </button>
-
-                        <button
-                          onClick={() => setIsTimedMode(true)}
-                          className={`py-2 sm:py-3 md:py-4 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
-                            isTimedMode
-                              ? 'bg-rose-500 text-white border-rose-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <Clock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-xs sm:text-sm md:text-base font-bold">Con tiempo (10s)</span>
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* 4. Launch button */}
-                  <div className="pt-0 md:pt-1 flex-shrink-0">
-                    <motion.button
-                      whileHover={selectedTables.length > 0 ? { scale: 1.01 } : {}}
-                      whileTap={selectedTables.length > 0 ? { scale: 0.98 } : {}}
-                      onClick={() => selectedTables.length > 0 && startQuiz(selectedTables, mode)}
-                      disabled={selectedTables.length === 0}
-                      className={`
-                        w-full py-2.5 sm:py-3.5 md:py-4 lg:py-5 rounded-xl sm:rounded-2xl md:rounded-3xl text-base sm:text-xl md:text-2xl font-black transition-all shadow-lg border-b-3 sm:border-b-4 md:border-b-6 flex items-center justify-center gap-2 sm:gap-3
-                        ${selectedTables.length > 0
-                          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-700 hover:brightness-105 active:translate-y-1'
-                          : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
-                        }
-                      `}
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <button
+                      onClick={selectAllTables}
+                      className="text-[11px] sm:text-xs md:text-sm font-bold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs hover:bg-indigo-50 transition-colors active:scale-95"
                     >
-                      <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 fill-current" />
-                      <span>
-                        {selectedTables.length > 0 
-                          ? `¡A JUGAR! (${selectedTables.length * 10} preguntas)` 
-                          : 'Elige al menos 1 tabla'
-                        }
-                      </span>
-                    </motion.button>
+                      Todas
+                    </button>
+                    <button
+                      onClick={clearTables}
+                      className="text-[11px] sm:text-xs md:text-sm font-bold text-rose-500 hover:text-rose-700 bg-white px-2.5 py-1 rounded-lg border border-rose-100 shadow-2xs hover:bg-rose-50 transition-colors active:scale-95"
+                    >
+                      Limpiar
+                    </button>
                   </div>
-
                 </div>
 
+                {/* 8 Table Buttons (2 to 9): 4 cols on mobile, 8 cols on tablet & desktop */}
+                <div className="grid grid-cols-4 md:grid-cols-8 gap-2 sm:gap-2.5 md:gap-3">
+                  {AVAILABLE_TABLES.map((num) => {
+                    const isSelected = selectedTables.includes(num);
+                    const theme = TABLE_THEMES[num];
+                    return (
+                      <motion.button
+                        key={num}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => toggleTable(num)}
+                        className={`
+                          relative flex flex-col items-center justify-center rounded-xl sm:rounded-2xl font-black transition-all border-b-3 sm:border-b-4
+                          h-16 sm:h-20 md:h-22 lg:h-24
+                          ${isSelected 
+                            ? `${theme.activeBg} ${theme.activeBorder} shadow-md -translate-y-0.5` 
+                            : `${theme.bg} ${theme.text} ${theme.border} hover:brightness-95`
+                          }
+                        `}
+                      >
+                        <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-none">
+                          {num}
+                        </span>
+                        <span className={`text-[10px] sm:text-xs md:text-sm font-bold mt-0.5 sm:mt-1 opacity-90 ${isSelected ? 'text-white' : 'text-slate-500'}`}>
+                          Tabla del {num}
+                        </span>
+                        {isSelected && (
+                          <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-4 h-4 sm:w-5 sm:h-5 bg-white text-emerald-600 rounded-full flex items-center justify-center shadow-xs">
+                            <Check className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[3]" />
+                          </span>
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2 & 3: Game Modes & Time Options: Balanced side-by-side columns on tablet and desktop */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3.5 md:gap-4 flex-shrink-0">
+                
+                {/* 2. Mode of play: En orden, En orden inverso, Aleatorio */}
+                <div className="bg-slate-50/90 p-2.5 sm:p-3.5 md:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between gap-2">
+                  <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
+                    2. Modo de Juego
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                    <button
+                      onClick={() => setMode('order')}
+                      className={`py-2 sm:py-3 md:py-3.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-1 ${
+                        mode === 'order'
+                          ? 'bg-emerald-500 text-white border-emerald-700 shadow-md -translate-y-0.5'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <ListOrdered className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                      <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">En orden</span>
+                      <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">1 al 10</span>
+                    </button>
+
+                    <button
+                      onClick={() => setMode('reverse')}
+                      className={`py-2 sm:py-3 md:py-3.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-1 ${
+                        mode === 'reverse'
+                          ? 'bg-amber-500 text-white border-amber-700 shadow-md -translate-y-0.5'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Undo2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                      <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Inverso</span>
+                      <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">10 al 1</span>
+                    </button>
+
+                    <button
+                      onClick={() => setMode('random')}
+                      className={`py-2 sm:py-3 md:py-3.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-1 ${
+                        mode === 'random'
+                          ? 'bg-violet-500 text-white border-violet-700 shadow-md -translate-y-0.5'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Shuffle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                      <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Aleatorio</span>
+                      <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">Mezclado</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Time Option: Con tiempo vs Sin tiempo */}
+                <div className="bg-slate-50/90 p-2.5 sm:p-3.5 md:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between gap-2">
+                  <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
+                    3. Tiempo Límite
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                    <button
+                      onClick={() => setIsTimedMode(false)}
+                      className={`py-2.5 sm:py-3 md:py-4 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                        !isTimedMode
+                          ? 'bg-sky-500 text-white border-sky-700 shadow-md -translate-y-0.5'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <InfinityIcon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                      <span className="text-xs sm:text-sm md:text-base font-bold">Sin tiempo</span>
+                    </button>
+
+                    <button
+                      onClick={() => setIsTimedMode(true)}
+                      className={`py-2.5 sm:py-3 md:py-4 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                        isTimedMode
+                          ? 'bg-rose-500 text-white border-rose-700 shadow-md -translate-y-0.5'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Clock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                      <span className="text-xs sm:text-sm md:text-base font-bold">Con tiempo ({timeLimitSeconds}s)</span>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* 4. Launch button */}
+              <div className="flex-shrink-0">
+                <motion.button
+                  whileHover={selectedTables.length > 0 ? { scale: 1.01 } : {}}
+                  whileTap={selectedTables.length > 0 ? { scale: 0.98 } : {}}
+                  onClick={() => selectedTables.length > 0 && startQuiz(selectedTables, mode)}
+                  disabled={selectedTables.length === 0}
+                  className={`
+                    w-full py-3 sm:py-3.5 md:py-4 lg:py-4.5 rounded-xl sm:rounded-2xl md:rounded-3xl text-base sm:text-xl md:text-2xl font-black transition-all shadow-lg border-b-3 sm:border-b-4 md:border-b-5 flex items-center justify-center gap-2 sm:gap-3
+                    ${selectedTables.length > 0
+                      ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-700 hover:brightness-105 active:translate-y-1'
+                      : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
+                    }
+                  `}
+                >
+                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 fill-current" />
+                  <span>
+                    {selectedTables.length > 0 
+                      ? `¡A JUGAR! (${selectedTables.length * 10} preguntas)` 
+                      : 'Elige al menos 1 tabla'
+                    }
+                  </span>
+                </motion.button>
               </div>
             </motion.div>
           )}
@@ -591,7 +581,7 @@ export default function App() {
               </div>
 
               {/* Main Quiz Area */}
-              <div className="flex-1 min-h-0 py-2 sm:py-4 flex flex-col landscape:flex-row items-center justify-center gap-3 sm:gap-5 md:gap-8 overflow-hidden">
+              <div className="flex-1 min-h-0 py-2 sm:py-4 flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-5 md:gap-8 overflow-hidden">
                 
                 {/* Question Display & Result Preview */}
                 <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-center">
