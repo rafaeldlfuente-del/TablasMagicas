@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { 
@@ -12,20 +12,24 @@ import {
   Home, 
   CheckCircle2, 
   XCircle, 
-  ArrowRight,
-  Star,
-  Sparkles,
-  Smartphone,
-  RotateCw,
-  GraduationCap,
-  BookOpen,
-  ArrowLeft
+  ArrowRight, 
+  Star, 
+  Sparkles, 
+  BookOpen, 
+  ArrowLeft,
+  Clock,
+  Infinity as InfinityIcon,
+  Shuffle,
+  ListOrdered,
+  Undo2,
+  Check,
+  Zap
 } from 'lucide-react';
 
 type Step = 'setup' | 'quiz' | 'results' | 'learn';
-type Mode = 'order' | 'random';
+type Mode = 'order' | 'reverse' | 'random';
 
-const APP_VERSION = '1.0.3'; // Increment this to force a reload
+const APP_VERSION = '1.0.4';
 
 interface Question {
   a: number;
@@ -39,17 +43,30 @@ interface ErrorRecord {
   user: number;
 }
 
+const AVAILABLE_TABLES = [2, 3, 4, 5, 6, 7, 8, 9];
+
+const TABLE_THEMES: Record<number, { bg: string; text: string; border: string; activeBg: string; activeBorder: string }> = {
+  2: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', activeBg: 'bg-amber-500 text-white', activeBorder: 'border-amber-700' },
+  3: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', activeBg: 'bg-orange-500 text-white', activeBorder: 'border-orange-700' },
+  4: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', activeBg: 'bg-rose-500 text-white', activeBorder: 'border-rose-700' },
+  5: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', activeBg: 'bg-emerald-500 text-white', activeBorder: 'border-emerald-700' },
+  6: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', activeBg: 'bg-teal-500 text-white', activeBorder: 'border-teal-700' },
+  7: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', activeBg: 'bg-sky-500 text-white', activeBorder: 'border-sky-700' },
+  8: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', activeBg: 'bg-indigo-600 text-white', activeBorder: 'border-indigo-800' },
+  9: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', activeBg: 'bg-purple-600 text-white', activeBorder: 'border-purple-800' },
+};
+
 export default function App() {
   const [step, setStep] = useState<Step>('setup');
   const [learningTable, setLearningTable] = useState<number | null>(null);
 
-  // PWA Update logic
+  // PWA update handler
   useRegisterSW({
     onRegistered(r) {
       if (r) {
         setInterval(() => {
           r.update();
-        }, 60 * 60 * 1000); // Check for updates every hour
+        }, 60 * 60 * 1000);
       }
     },
     onNeedRefresh() {
@@ -69,90 +86,57 @@ export default function App() {
       localStorage.setItem('app_version', APP_VERSION);
     }
   }, []);
-  const [selectedTables, setSelectedTables] = useState<number[]>([]);
+
+  // Settings state
+  const [selectedTables, setSelectedTables] = useState<number[]>([2]);
   const [mode, setMode] = useState<Mode>('order');
-  const [isTimedMode, setIsTimedMode] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [isTimedMode, setIsTimedMode] = useState<boolean>(false);
+  const [timeLimitSeconds, setTimeLimitSeconds] = useState<number>(10);
+
+  // Quiz state
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
   const [score, setScore] = useState(0);
   const [errors, setErrors] = useState<ErrorRecord[]>([]);
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'incorrect'; message: string; correctAnswer?: number } | null>(null);
-  const [isRetryingErrors, setIsRetryingErrors] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(10);
   const [autoAdvanceSeconds, setAutoAdvanceSeconds] = useState(2);
+  const [isRetryingErrors, setIsRetryingErrors] = useState(false);
+
   const [highScore, setHighScore] = useState<number>(() => {
     const saved = localStorage.getItem('tablasMagicasHighScore');
     return saved ? parseInt(saved) : 0;
   });
 
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Focus input automatically
-  useEffect(() => {
-    if (step === 'quiz' && !feedback) {
-      inputRef.current?.focus();
-    }
-  }, [step, feedback, currentIndex]);
-
-  // Timer logic
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (step === 'quiz' && isTimedMode && !feedback && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && !feedback && step === 'quiz') {
-      handleTimeOut();
-    }
-
-    return () => clearInterval(timer);
-  }, [step, isTimedMode, feedback, timeLeft]);
-
-  // Auto-advance logic
-  useEffect(() => {
-    let autoAdvanceTimer: NodeJS.Timeout;
-    let countdownInterval: NodeJS.Timeout;
-    
-    if (feedback && step === 'quiz') {
-      setAutoAdvanceSeconds(2);
-      countdownInterval = setInterval(() => {
-        setAutoAdvanceSeconds(prev => Math.max(0, prev - 1));
-      }, 1000);
-      
-      autoAdvanceTimer = setTimeout(() => {
-        nextQuestion();
-      }, 2000);
-    }
-    
-    return () => {
-      clearTimeout(autoAdvanceTimer);
-      clearInterval(countdownInterval);
-    };
-  }, [feedback, step]);
-
-  const handleTimeOut = () => {
-    const currentQ = questions[currentIndex];
-    const record: ErrorRecord = {
-      question: `${currentQ.a} × ${currentQ.b}`,
-      correct: currentQ.correct,
-      user: -1 // Indicates timeout
-    };
-    setErrors(prev => [...prev, record]);
-    setFeedback({ 
-      type: 'incorrect', 
-      message: '¡Se acabó el tiempo! ⏰',
-      correctAnswer: currentQ.correct
-    });
+  // Table selection toggling
+  const toggleTable = (num: number) => {
+    setSelectedTables(prev => 
+      prev.includes(num)
+        ? prev.filter(t => t !== num)
+        : [...prev, num].sort((a, b) => a - b)
+    );
   };
 
+  const selectAllTables = () => setSelectedTables([...AVAILABLE_TABLES]);
+  const clearTables = () => setSelectedTables([]);
+
+  // Quiz generation
   const startQuiz = (tables: number[], quizMode: Mode) => {
+    if (tables.length === 0) return;
+
     let qList: Question[] = [];
     tables.forEach(table => {
-      for (let i = 1; i <= 9; i++) {
-        qList.push({ a: table, b: i, correct: table * i });
+      if (quizMode === 'reverse') {
+        // En orden inverso: 10 al 1
+        for (let i = 10; i >= 1; i--) {
+          qList.push({ a: table, b: i, correct: table * i });
+        }
+      } else {
+        // En orden (1 al 10) o aleatorio (se mezclará después)
+        for (let i = 1; i <= 10; i++) {
+          qList.push({ a: table, b: i, correct: table * i });
+        }
       }
     });
 
@@ -173,7 +157,7 @@ export default function App() {
     setFeedback(null);
     setUserInput('');
     setIsRetryingErrors(false);
-    setTimeLeft(10);
+    setTimeLeft(timeLimitSeconds);
   };
 
   const startRetryErrors = () => {
@@ -197,15 +181,45 @@ export default function App() {
     setFeedback(null);
     setUserInput('');
     setIsRetryingErrors(true);
-    setTimeLeft(10);
+    setTimeLeft(timeLimitSeconds);
   };
 
-  const handleAnswer = (val?: string) => {
+  const handleTimeOut = useCallback(() => {
+    if (questions.length === 0 || currentIndex >= questions.length) return;
+    const currentQ = questions[currentIndex];
+    const record: ErrorRecord = {
+      question: `${currentQ.a} × ${currentQ.b}`,
+      correct: currentQ.correct,
+      user: -1
+    };
+    setErrors(prev => [...prev, record]);
+    setFeedback({ 
+      type: 'incorrect', 
+      message: '¡Tiempo agotado! ⏰',
+      correctAnswer: currentQ.correct
+    });
+  }, [questions, currentIndex]);
+
+  // Timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (step === 'quiz' && isTimedMode && !feedback && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+    } else if (step === 'quiz' && isTimedMode && timeLeft === 0 && !feedback) {
+      handleTimeOut();
+    }
+    return () => clearInterval(timer);
+  }, [step, isTimedMode, feedback, timeLeft, handleTimeOut]);
+
+  // Answer handler
+  const handleAnswer = useCallback((val?: string) => {
     const inputToTest = val !== undefined ? val : userInput;
-    if (inputToTest.trim() === '') return;
+    if (inputToTest.trim() === '' || feedback !== null) return;
 
     const currentQ = questions[currentIndex];
-    const userAns = parseInt(inputToTest);
+    const userAns = parseInt(inputToTest, 10);
     const isCorrect = userAns === currentQ.correct;
 
     if (isCorrect) {
@@ -215,550 +229,714 @@ export default function App() {
       const record: ErrorRecord = {
         question: `${currentQ.a} × ${currentQ.b}`,
         correct: currentQ.correct,
-        user: userAns
+        user: isNaN(userAns) ? -1 : userAns
       };
       setErrors(prev => [...prev, record]);
       setFeedback({ 
         type: 'incorrect', 
-        message: '¡Casi! Inténtalo de nuevo.',
+        message: '¡Casi! Repásala.',
         correctAnswer: currentQ.correct
       });
     }
-  };
+  }, [userInput, feedback, questions, currentIndex]);
 
-  const nextQuestion = () => {
+  const nextQuestion = useCallback(() => {
     setFeedback(null);
     setUserInput('');
-    setTimeLeft(10);
+    setTimeLeft(timeLimitSeconds);
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {
-      // Check for high score
-      if (score + (feedback?.type === 'correct' ? 1 : 0) > highScore) {
-        const newHigh = score + (feedback?.type === 'correct' ? 1 : 0);
-        setHighScore(newHigh);
-        localStorage.setItem('tablasMagicasHighScore', newHigh.toString());
+      const finalScore = score + (feedback?.type === 'correct' ? 1 : 0);
+      if (finalScore > highScore) {
+        setHighScore(finalScore);
+        localStorage.setItem('tablasMagicasHighScore', finalScore.toString());
       }
       setStep('results');
     }
-  };
+  }, [currentIndex, questions.length, score, feedback, highScore, timeLimitSeconds]);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      if (feedback) {
+  // Auto-advance on feedback
+  useEffect(() => {
+    let autoAdvanceTimer: NodeJS.Timeout;
+    let countdownInterval: NodeJS.Timeout;
+    
+    if (feedback && step === 'quiz') {
+      setAutoAdvanceSeconds(2);
+      countdownInterval = setInterval(() => {
+        setAutoAdvanceSeconds(prev => Math.max(0, prev - 1));
+      }, 1000);
+      
+      autoAdvanceTimer = setTimeout(() => {
         nextQuestion();
-      } else {
-        handleAnswer();
-      }
+      }, 2000);
     }
-  };
+    
+    return () => {
+      clearTimeout(autoAdvanceTimer);
+      clearInterval(countdownInterval);
+    };
+  }, [feedback, step, nextQuestion]);
 
-  const toggleTable = (num: number) => {
-    setSelectedTables(prev => 
-      prev.includes(num) 
-        ? prev.filter(t => t !== num) 
-        : [...prev, num].sort((a, b) => a - b)
-    );
-  };
+  // Hardware keyboard listener
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (step !== 'quiz') return;
 
-  const tableColors = [
-    'bg-rose-100 text-rose-600 border-rose-300 hover:bg-rose-200',
-    'bg-orange-100 text-orange-600 border-orange-300 hover:bg-orange-200',
-    'bg-amber-100 text-amber-600 border-amber-300 hover:bg-amber-200',
-    'bg-emerald-100 text-emerald-600 border-emerald-300 hover:bg-emerald-200',
-    'bg-teal-100 text-teal-600 border-teal-300 hover:bg-teal-200',
-    'bg-cyan-100 text-cyan-600 border-cyan-300 hover:bg-cyan-200',
-    'bg-sky-100 text-sky-600 border-sky-300 hover:bg-sky-200',
-    'bg-indigo-100 text-indigo-600 border-indigo-300 hover:bg-indigo-200',
-    'bg-violet-100 text-violet-600 border-violet-300 hover:bg-violet-200',
-  ];
+      if (e.key >= '0' && e.key <= '9') {
+        if (!feedback) {
+          setUserInput(prev => (prev.length < 3 ? prev + e.key : prev));
+        }
+      } else if (e.key === 'Backspace') {
+        if (!feedback) {
+          setUserInput(prev => prev.slice(0, -1));
+        }
+      } else if (e.key === 'Enter') {
+        if (feedback) {
+          nextQuestion();
+        } else {
+          handleAnswer();
+        }
+      }
+    };
 
-  const tableSelectedColors = [
-    'bg-rose-500 text-white border-rose-700 shadow-rose-200',
-    'bg-orange-500 text-white border-orange-700 shadow-orange-200',
-    'bg-amber-500 text-white border-amber-700 shadow-amber-200',
-    'bg-emerald-500 text-white border-emerald-700 shadow-emerald-200',
-    'bg-teal-500 text-white border-teal-700 shadow-teal-200',
-    'bg-cyan-500 text-white border-cyan-700 shadow-cyan-200',
-    'bg-sky-500 text-white border-sky-700 shadow-sky-200',
-    'bg-indigo-500 text-white border-indigo-700 shadow-indigo-200',
-    'bg-violet-500 text-white border-violet-700 shadow-violet-200',
-  ];
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [step, feedback, handleAnswer, nextQuestion]);
 
   return (
-    <div className="h-[100dvh] w-full bg-gradient-to-br from-indigo-50 via-white to-pink-50 font-sans text-slate-800 p-4 flex flex-col items-center justify-center overflow-hidden select-none">
-      <div className="w-full h-full flex flex-col items-center justify-center">
+    <div className="h-[100dvh] w-full max-h-[100dvh] bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 font-sans text-slate-800 p-2 sm:p-3 md:p-4 flex flex-col items-center justify-center overflow-hidden select-none">
+      <div className="w-full h-full max-h-full flex flex-col items-center justify-center">
         <AnimatePresence mode="wait">
-        {step === 'setup' && (
-          <motion.div 
-            key="setup"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="max-w-4xl w-full h-full md:max-h-[92dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-6 lg:p-8 border-4 md:border-8 border-indigo-100 flex flex-col overflow-hidden landscape:max-w-7xl landscape:h-[92vh]"
-          >
-            <div className="flex flex-col landscape:flex-row h-full gap-4 md:gap-6">
-              {/* Left Column: Title & Modes */}
-              <div className="flex flex-col landscape:w-[40%] h-full overflow-y-auto custom-scrollbar pr-1">
-                <div className="text-center landscape:text-left mb-3 md:mb-6 flex-shrink-0">
-                  <motion.div
-                    initial={{ scale: 0.8, rotate: -5 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                  >
-                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 mb-1 tracking-tight drop-shadow-sm">
-                      ¡Tablas Mágicas! 🪄
+
+          {/* SCREEN 1: SETUP */}
+          {step === 'setup' && (
+            <motion.div
+              key="setup"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-full max-w-5xl h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl p-3 sm:p-5 md:p-6 border-2 sm:border-4 md:border-8 border-indigo-100 flex flex-col overflow-hidden"
+            >
+              {/* Top Bar / Header */}
+              <div className="flex items-center justify-between gap-2 pb-2 sm:pb-3 border-b border-slate-100 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl sm:text-3xl">🪄</span>
+                  <div>
+                    <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 leading-tight">
+                      ¡Tablas Mágicas!
                     </h1>
-                  </motion.div>
-                  <div className="flex items-center justify-center landscape:justify-start gap-2">
-                    <p className="text-sm md:text-lg text-slate-400 font-medium italic">¡Aprender es una aventura! ✨</p>
-                    <span className="text-[10px] md:text-xs font-mono text-slate-300 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">v{APP_VERSION}</span>
+                    <p className="text-[11px] sm:text-xs text-slate-400 font-medium hidden sm:block">
+                      Practica tus tablas de multiplicar sin conexión ✨
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 md:gap-4 flex-1 justify-center">
-                  <div className="bg-slate-50 p-2 md:p-4 rounded-xl md:rounded-2xl border-2 border-slate-100 shadow-inner">
-                    <h3 className="text-[10px] md:text-xs font-black text-slate-500 mb-2 md:mb-3 uppercase tracking-widest text-center landscape:text-left">Modo de Juego</h3>
-                    <div className="flex flex-row gap-2 md:gap-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setStep('learn')}
+                    className="py-1.5 px-2.5 sm:px-3 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                    title="Ver tablas de multiplicar"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600" />
+                    <span>Estudio</span>
+                  </button>
+                  <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                    v{APP_VERSION}
+                  </span>
+                </div>
+              </div>
+
+              {/* Main Content: Adaptive layout (2-columns in landscape/tablets, vertical in mobile portrait) */}
+              <div className="flex-1 min-h-0 py-2 sm:py-3 flex flex-col landscape:flex-row gap-2.5 sm:gap-4 md:gap-6 overflow-hidden">
+                
+                {/* Tables Selection (Del 2 al 9) */}
+                <div className="flex-1 min-h-0 flex flex-col bg-slate-50/80 p-2.5 sm:p-3 md:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-inner overflow-hidden">
+                  <div className="flex items-center justify-between mb-1.5 sm:mb-2 flex-shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">
+                        1. Elige las tablas (2 al 9)
+                      </span>
+                      {selectedTables.length > 0 && (
+                        <span className="bg-indigo-100 text-indigo-700 font-black text-[10px] sm:text-xs px-2 py-0.5 rounded-full">
+                          {selectedTables.length} {selectedTables.length === 1 ? 'tabla' : 'tablas'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
                       <button
-                        onClick={() => setMode('order')}
-                        className={`flex-1 py-2 md:py-3 px-2 rounded-xl md:rounded-2xl text-xs md:text-lg font-black transition-all border-b-2 md:border-b-4 ${
-                          mode === 'order' 
-                            ? 'bg-emerald-400 text-white border-emerald-600 shadow-lg -translate-y-0.5' 
-                            : 'bg-white text-slate-400 border-slate-100'
-                        }`}
+                        onClick={selectAllTables}
+                        className="text-[11px] sm:text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white px-2 py-0.5 rounded-lg border border-indigo-100 shadow-2xs transition-colors"
                       >
-                        Orden 📏
+                        Todas
                       </button>
                       <button
-                        onClick={() => setMode('random')}
-                        className={`flex-1 py-2 md:py-3 px-2 rounded-xl md:rounded-2xl text-xs md:text-lg font-black transition-all border-b-2 md:border-b-4 ${
-                          mode === 'random' 
-                            ? 'bg-violet-400 text-white border-violet-600 shadow-lg -translate-y-0.5' 
-                            : 'bg-white text-slate-400 border-slate-100'
-                        }`}
+                        onClick={clearTables}
+                        className="text-[11px] sm:text-xs font-bold text-rose-500 hover:text-rose-700 bg-white px-2 py-0.5 rounded-lg border border-rose-100 shadow-2xs transition-colors"
                       >
-                        Azar 🎲
+                        Limpiar
                       </button>
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 p-2 md:p-4 rounded-xl md:rounded-2xl border-2 border-slate-100 shadow-inner">
-                    <button
-                      onClick={() => setIsTimedMode(!isTimedMode)}
-                      className={`w-full py-2 md:py-3 px-4 rounded-xl md:rounded-2xl text-xs md:text-lg font-black transition-all border-b-2 md:border-b-4 flex items-center justify-center gap-2 md:gap-3 ${
-                        isTimedMode 
-                          ? 'bg-rose-400 text-white border-rose-600 shadow-lg -translate-y-0.5' 
-                          : 'bg-white text-slate-400 border-slate-100'
-                      }`}
-                    >
-                      {isTimedMode ? 'Con Tiempo ⏰' : 'Sin Tiempo ⏳'}
-                    </button>
+                  {/* 8 Table Buttons (2 to 9) in a clean, proportional grid */}
+                  <div className="grid grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 flex-1 min-h-0 items-stretch">
+                    {AVAILABLE_TABLES.map((num) => {
+                      const isSelected = selectedTables.includes(num);
+                      const theme = TABLE_THEMES[num];
+                      return (
+                        <motion.button
+                          key={num}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => toggleTable(num)}
+                          className={`
+                            relative flex flex-col items-center justify-center rounded-xl sm:rounded-2xl font-black transition-all border-b-2 sm:border-b-4
+                            ${isSelected 
+                              ? `${theme.activeBg} ${theme.activeBorder} shadow-md -translate-y-0.5` 
+                              : `${theme.bg} ${theme.text} ${theme.border} hover:brightness-95`
+                            }
+                          `}
+                        >
+                          <span className="text-xl sm:text-3xl md:text-4xl lg:text-5xl leading-none">
+                            {num}
+                          </span>
+                          <span className={`text-[9px] sm:text-[11px] md:text-xs font-bold mt-0.5 opacity-90 ${isSelected ? 'text-white' : 'text-slate-500'}`}>
+                            Tabla del {num}
+                          </span>
+                          {isSelected && (
+                            <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white text-emerald-600 rounded-full flex items-center justify-center text-[10px] shadow-xs">
+                              <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[3]" />
+                            </span>
+                          )}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Game Modes & Time Options */}
+                <div className="flex-1 min-h-0 flex flex-col gap-2 sm:gap-3 landscape:w-[48%] overflow-hidden justify-between">
+                  
+                  {/* Mode of play: En orden, En orden inverso, Aleatorio */}
+                  <div className="bg-slate-50/80 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-inner flex flex-col justify-center flex-shrink-0">
+                    <span className="text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider mb-1.5 sm:mb-2">
+                      2. Modo de Juego
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                      <button
+                        onClick={() => setMode('order')}
+                        className={`py-1.5 sm:py-2.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 ${
+                          mode === 'order'
+                            ? 'bg-emerald-500 text-white border-emerald-700 shadow-md -translate-y-0.5'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <ListOrdered className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-[11px] sm:text-xs md:text-sm leading-tight">En orden</span>
+                        <span className="text-[9px] opacity-80 hidden sm:inline">1 al 10</span>
+                      </button>
+
+                      <button
+                        onClick={() => setMode('reverse')}
+                        className={`py-1.5 sm:py-2.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 ${
+                          mode === 'reverse'
+                            ? 'bg-amber-500 text-white border-amber-700 shadow-md -translate-y-0.5'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Undo2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-[11px] sm:text-xs md:text-sm leading-tight">Inverso</span>
+                        <span className="text-[9px] opacity-80 hidden sm:inline">10 al 1</span>
+                      </button>
+
+                      <button
+                        onClick={() => setMode('random')}
+                        className={`py-1.5 sm:py-2.5 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 ${
+                          mode === 'random'
+                            ? 'bg-violet-500 text-white border-violet-700 shadow-md -translate-y-0.5'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-[11px] sm:text-xs md:text-sm leading-tight">Aleatorio</span>
+                        <span className="text-[9px] opacity-80 hidden sm:inline">Mezclado</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="bg-slate-50 p-2 md:p-4 rounded-xl md:rounded-2xl border-2 border-slate-100 shadow-inner">
-                    <button
-                      onClick={() => setStep('learn')}
-                      className="w-full py-2 md:py-3 px-4 rounded-xl md:rounded-2xl text-xs md:text-lg font-black transition-all border-b-2 md:border-b-4 flex items-center justify-center gap-2 md:gap-3 bg-sky-400 text-white border-sky-600 shadow-lg hover:bg-sky-500 -translate-y-0.5"
-                    >
-                      <BookOpen className="w-4 h-4 md:w-5 md:h-5" />
-                      Aprendizaje 📚
-                    </button>
+                  {/* Time Option: Con tiempo vs Sin tiempo */}
+                  <div className="bg-slate-50/80 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-inner flex flex-col justify-center flex-shrink-0">
+                    <span className="text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider mb-1.5 sm:mb-2">
+                      3. Tiempo Límite
+                    </span>
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                      <button
+                        onClick={() => setIsTimedMode(false)}
+                        className={`py-1.5 sm:py-2.5 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                          !isTimedMode
+                            ? 'bg-sky-500 text-white border-sky-700 shadow-md -translate-y-0.5'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <InfinityIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-xs sm:text-sm font-bold">Sin tiempo</span>
+                      </button>
+
+                      <button
+                        onClick={() => setIsTimedMode(true)}
+                        className={`py-1.5 sm:py-2.5 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                          isTimedMode
+                            ? 'bg-rose-500 text-white border-rose-700 shadow-md -translate-y-0.5'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-xs sm:text-sm font-bold">Con tiempo (10s)</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-4 pt-2">
-                  <motion.button
-                    whileHover={selectedTables.length > 0 ? { scale: 1.02 } : {}}
-                    whileTap={selectedTables.length > 0 ? { scale: 0.98 } : {}}
-                    disabled={selectedTables.length === 0}
-                    onClick={() => selectedTables.length > 0 && startQuiz(selectedTables, mode)}
-                    className={`
-                      w-full py-2 md:py-4 lg:py-5 rounded-xl md:rounded-3xl text-lg md:text-3xl font-black transition-all shadow-xl border-b-4 md:border-b-8
-                      ${selectedTables.length > 0 
-                        ? 'bg-gradient-to-r from-orange-400 to-amber-400 text-white border-orange-600 hover:from-orange-500 hover:to-amber-500' 
-                        : 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed'
-                      }
-                    `}
-                  >
-                    ¡A JUGAR! 🚀
-                  </motion.button>
-                </div>
-              </div>
-
-              {/* Right Column: Table Grid */}
-              <div className="flex flex-col landscape:w-[60%] h-full overflow-y-auto custom-scrollbar">
-                <div className="flex justify-between items-end mb-2 md:mb-4">
-                  <h2 className="text-lg md:text-xl font-black text-slate-700">Elige tus tablas:</h2>
-                  {selectedTables.length > 0 && (
-                    <button 
-                      onClick={() => setSelectedTables([])}
-                      className="text-[10px] md:text-xs font-bold text-rose-400 hover:text-rose-500 transition-colors flex items-center gap-1"
-                    >
-                      <RotateCcw className="w-3 h-3 md:w-4 md:h-4" /> Limpiar
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-3 gap-2 md:gap-3 flex-1 min-h-0 p-1">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num, idx) => (
+                  {/* Launch button */}
+                  <div className="pt-1 flex-shrink-0">
                     <motion.button
-                      key={num}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => toggleTable(num)}
+                      whileHover={selectedTables.length > 0 ? { scale: 1.01 } : {}}
+                      whileTap={selectedTables.length > 0 ? { scale: 0.98 } : {}}
+                      onClick={() => selectedTables.length > 0 && startQuiz(selectedTables, mode)}
+                      disabled={selectedTables.length === 0}
                       className={`
-                        h-full min-h-[40px] md:h-auto text-3xl md:text-5xl lg:text-6xl font-black rounded-xl md:rounded-2xl transition-all border-b-4 md:border-b-8
-                        ${selectedTables.includes(num) 
-                          ? `${tableSelectedColors[idx]} shadow-lg -translate-y-0.5` 
-                          : `${tableColors[idx]} border-slate-200`
+                        w-full py-2.5 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl text-base sm:text-xl md:text-2xl font-black transition-all shadow-lg border-b-3 sm:border-b-4 md:border-b-6 flex items-center justify-center gap-2
+                        ${selectedTables.length > 0
+                          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-700 hover:brightness-105 active:translate-y-1'
+                          : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
                         }
                       `}
                     >
-                      {num}
+                      <Zap className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />
+                      <span>
+                        {selectedTables.length > 0 
+                          ? `¡A JUGAR! (${selectedTables.length * 10} preguntas)` 
+                          : 'Elige al menos 1 tabla'
+                        }
+                      </span>
                     </motion.button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
+                  </div>
 
-        {step === 'quiz' && questions.length > 0 && (
-          <motion.div 
-            key="quiz"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.1 }}
-            className="max-w-4xl w-full h-full md:max-h-[92dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-6 lg:p-8 border-4 md:border-8 border-amber-100 relative overflow-hidden flex flex-col landscape:max-w-7xl landscape:h-[92vh]"
-          >
-            {/* Progress Bar */}
-            <div className="absolute top-0 left-0 w-full h-2 md:h-3 bg-slate-50">
-              <motion.div 
-                className="h-full bg-gradient-to-r from-amber-300 to-orange-400"
-                initial={{ width: 0 }}
-                animate={{ width: `${((currentIndex) / questions.length) * 100}%` }}
-              />
-            </div>
-
-            <div className="flex justify-between items-center mb-4 md:mb-6 pt-2 md:pt-4 flex-shrink-0">
-              <button 
-                onClick={() => setStep('setup')}
-                className="p-2 md:p-3 bg-white text-slate-400 rounded-xl md:rounded-2xl hover:bg-slate-50 transition-all border-b-2 md:border-b-4 border-slate-100 active:translate-y-1 active:border-b-0 shadow-sm"
-                title="Volver al inicio"
-              >
-                <Home className="w-5 h-5 md:w-8 md:h-8" />
-              </button>
-              <div className="flex gap-2 md:gap-4 items-center">
-                <div className="bg-amber-50 text-amber-600 px-3 py-1.5 md:px-6 md:py-3 rounded-lg md:rounded-2xl font-black text-xs md:text-xl border-b-2 md:border-b-4 border-amber-200 shadow-sm">
-                  {currentIndex + 1} / {questions.length}
                 </div>
-                {isTimedMode && !feedback && (
-                  <motion.div 
-                    key={timeLeft}
-                    initial={{ scale: 1.2 }}
-                    animate={{ scale: 1 }}
-                    className={`px-3 py-1.5 md:px-8 md:py-3 rounded-lg md:rounded-2xl font-black text-xs md:text-2xl flex items-center gap-2 md:gap-3 border-b-2 md:border-b-4 shadow-sm ${
-                      timeLeft <= 3 ? 'bg-rose-50 text-rose-500 border-rose-200 animate-pulse' : 'bg-sky-50 text-sky-500 border-sky-200'
-                    }`}
-                  >
-                    {timeLeft}s
-                  </motion.div>
-                )}
-              </div>
-              <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 md:px-6 md:py-3 rounded-lg md:rounded-2xl font-black text-xs md:text-xl flex items-center gap-2 md:gap-3 border-b-2 md:border-b-4 border-emerald-200 shadow-sm">
-                <Star className="w-4 h-4 md:w-8 md:h-8 fill-current" /> {score}
-              </div>
-            </div>
 
-            <div className="flex flex-col landscape:flex-row items-center justify-center gap-4 md:gap-8 lg:gap-10 flex-1 min-h-0 overflow-hidden">
-              {/* Question Area */}
-              <div className="flex-1 text-center flex flex-col justify-center items-center h-full landscape:w-1/2">
-                <div className="text-4xl md:text-[4rem] lg:text-[6rem] font-black text-slate-800 flex items-center justify-center gap-3 md:gap-6 mb-4 md:mb-6">
-                  <span>{questions[currentIndex].a}</span>
-                  <span className="text-amber-400">×</span>
-                  <span>{questions[currentIndex].b}</span>
-                </div>
-                
+              </div>
+            </motion.div>
+          )}
+
+          {/* SCREEN 2: QUIZ */}
+          {step === 'quiz' && questions.length > 0 && (
+            <motion.div
+              key="quiz"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              className="w-full max-w-5xl h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl p-2.5 sm:p-4 md:p-6 border-2 sm:border-4 md:border-8 border-indigo-100 relative overflow-hidden flex flex-col justify-between"
+            >
+              {/* Progress bar at top */}
+              <div className="absolute top-0 left-0 w-full h-1.5 sm:h-2 bg-slate-100">
                 <motion.div 
-                  key={currentIndex}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="w-28 md:w-48 lg:w-64 h-14 md:h-20 lg:h-32 text-3xl md:text-[3rem] lg:text-[5rem] flex items-center justify-center font-black rounded-xl md:rounded-3xl border-2 md:border-8 border-indigo-100 bg-indigo-50 text-indigo-600 shadow-inner"
-                >
-                  {userInput || '?'}
-                </motion.div>
+                  className="h-full bg-gradient-to-r from-indigo-500 to-pink-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
               </div>
 
-              {/* Keypad Area */}
-              <div className="flex-1 w-full max-w-lg landscape:w-1/2 h-full flex flex-col justify-center min-h-0">
-                <div className="flex-1 flex flex-col justify-center min-h-0">
-                  {!feedback ? (
-                    <div className="grid grid-cols-3 gap-2 md:gap-3 lg:gap-4">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
-                        <motion.button
-                          key={num}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => setUserInput(prev => prev.length < 3 ? prev + num : prev)}
-                          className={`
-                            h-10 md:h-14 lg:h-20 text-lg md:text-2xl lg:text-4xl font-black rounded-lg md:rounded-2xl bg-white text-indigo-600 border-b-2 md:border-b-4 border-indigo-100 hover:bg-indigo-50 active:translate-y-1 active:border-b-0 transition-all shadow-sm
-                            ${num === 0 ? 'col-start-2' : ''}
-                          `}
-                        >
-                          {num}
-                        </motion.button>
-                      ))}
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setUserInput(prev => prev.slice(0, -1))}
-                        className="h-10 md:h-14 lg:h-20 text-lg md:text-2xl lg:text-4xl font-black rounded-lg md:rounded-2xl bg-slate-50 text-slate-400 border-b-2 md:border-b-4 border-slate-100 active:translate-y-1 active:border-b-0 transition-all shadow-sm"
-                      >
-                        ⌫
-                      </motion.button>
-                    </div>
-                  ) : (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      className={`w-full p-4 md:p-6 lg:p-8 rounded-xl md:rounded-3xl text-center border-2 md:border-8 shadow-2xl ${
-                        feedback.type === 'correct' ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+              {/* Top Navigation Bar */}
+              <div className="flex justify-between items-center pt-1 pb-1.5 sm:pb-2 border-b border-slate-100 flex-shrink-0">
+                <button
+                  onClick={() => setStep('setup')}
+                  className="p-1.5 sm:p-2 bg-slate-50 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 transition-all shadow-xs active:scale-95"
+                  title="Volver al inicio"
+                >
+                  <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <div className="bg-indigo-50 text-indigo-700 px-2.5 py-1 sm:px-3 sm:py-1 rounded-xl font-black text-xs sm:text-sm border border-indigo-200">
+                    Pregunta {currentIndex + 1} / {questions.length}
+                  </div>
+                  
+                  {isTimedMode && (
+                    <motion.div
+                      key={timeLeft}
+                      initial={{ scale: 1.15 }}
+                      animate={{ scale: 1 }}
+                      className={`px-2.5 py-1 rounded-xl font-black text-xs sm:text-sm flex items-center gap-1 border ${
+                        timeLeft <= 3 
+                          ? 'bg-rose-100 text-rose-600 border-rose-300 animate-pulse' 
+                          : 'bg-amber-50 text-amber-600 border-amber-200'
                       }`}
                     >
-                      <div className={`text-xl md:text-3xl lg:text-5xl font-black mb-1 md:mb-4 ${
-                        feedback.type === 'correct' ? 'text-emerald-500' : 'text-rose-500'
-                      }`}>
-                        {feedback.message}
-                      </div>
-                      {feedback.type === 'incorrect' && (
-                        <div className="text-lg md:text-2xl lg:text-3xl font-black text-slate-600">
-                          Respuesta: <span className="text-rose-500 text-3xl md:text-[3rem] lg:text-[5rem] leading-none">{feedback.correctAnswer}</span>
-                        </div>
-                      )}
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{timeLeft}s</span>
                     </motion.div>
                   )}
                 </div>
 
-                <div className="mt-3 md:mt-6">
-                  {!feedback ? (
-                    <motion.button
-                      whileHover={userInput !== '' ? { scale: 1.02 } : {}}
-                      whileTap={userInput !== '' ? { scale: 0.98 } : {}}
-                      onClick={() => handleAnswer()}
-                      disabled={userInput === ''}
-                      className={`w-full py-2 md:py-4 lg:py-6 text-white text-lg md:text-2xl lg:text-3xl font-black rounded-xl md:rounded-2xl shadow-xl border-b-4 md:border-b-8 transition-all ${
-                        userInput !== '' ? 'bg-indigo-500 border-indigo-700 hover:bg-indigo-600' : 'bg-slate-100 border-slate-200 text-slate-300'
-                      }`}
-                    >
-                      ✓ COMPROBAR
-                    </motion.button>
-                  ) : (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={nextQuestion}
-                      className={`w-full py-2 md:py-4 lg:py-6 text-white text-lg md:text-2xl lg:text-3xl font-black rounded-xl md:rounded-2xl shadow-xl border-b-4 md:border-b-8 transition-all flex items-center justify-center gap-2 md:gap-4 ${
-                        feedback.type === 'correct' ? 'bg-emerald-500 border-emerald-700 hover:bg-emerald-600' : 'bg-rose-50 border-rose-700 hover:bg-rose-600'
-                      }`}
-                    >
-                      SIGUIENTE ({autoAdvanceSeconds}s) <ArrowRight className="w-5 h-5 md:w-8 md:h-8" />
-                    </motion.button>
-                  )}
+                <div className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-xl font-black text-xs sm:text-sm flex items-center gap-1 border border-emerald-200">
+                  <Star className="w-3.5 h-3.5 fill-current text-emerald-500" />
+                  <span>{score}</span>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
 
-        {step === 'results' && (
-          <motion.div 
-            key="results"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl w-full h-full md:max-h-[92dvh] bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl p-4 md:p-6 lg:p-8 border-4 md:border-8 border-emerald-100 flex flex-col overflow-hidden landscape:max-w-7xl landscape:h-[92vh]"
-          >
-            <div className="text-center mb-3 md:mb-4 flex-shrink-0">
-              <div className="inline-block p-2 md:p-3 bg-amber-50 rounded-[1.5rem] mb-2 shadow-inner">
-                <Trophy className="w-8 h-8 md:w-12 lg:w-16 md:h-12 lg:h-16 text-amber-400" />
-              </div>
-              <h2 className="text-2xl md:text-3xl lg:text-5xl font-black text-slate-800 mb-1 tracking-tight">
-                ¡Genial! 🌈
-                <span className="ml-2 text-[10px] md:text-sm font-mono text-slate-300 vertical-middle opacity-50">v{APP_VERSION}</span>
-              </h2>
-              <p className="text-xs md:text-lg lg:text-xl text-slate-400 font-bold">
-                {selectedTables.length === 1 
-                  ? `Tabla del ${selectedTables[0]}` 
-                  : `Repaso de tablas`}
-              </p>
-            </div>
-
-            <div className="flex flex-col landscape:flex-row gap-4 md:gap-6 lg:gap-8 flex-1 min-h-0 overflow-y-auto landscape:overflow-hidden custom-scrollbar">
-              {/* Left Side: Score & Buttons */}
-              <div className="flex-1 flex flex-col gap-4 md:gap-6 landscape:w-1/2">
-                <div className="bg-slate-50 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 lg:p-8 text-center border-2 border-slate-100 flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 justify-around items-center shadow-inner flex-shrink-0">
-                  <div>
-                    <div className="text-[10px] md:text-xs lg:text-sm font-black text-slate-400 mb-1 uppercase tracking-widest">Puntos</div>
-                    <div className="text-4xl md:text-5xl lg:text-[6rem] font-black text-indigo-500 leading-none">
-                      {score}<span className="text-xs md:text-lg lg:text-xl text-slate-300">/{questions.length}</span>
-                    </div>
+              {/* Main Quiz Area: Responsive split */}
+              <div className="flex-1 min-h-0 py-1.5 sm:py-2 md:py-3 flex flex-col landscape:flex-row items-center justify-center gap-2 sm:gap-4 md:gap-6 overflow-hidden">
+                
+                {/* Left Area: The Question & Result Preview */}
+                <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-center">
+                  <div className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-800 flex items-center justify-center gap-2 sm:gap-4 mb-2 sm:mb-3">
+                    <span>{questions[currentIndex].a}</span>
+                    <span className="text-indigo-500">×</span>
+                    <span>{questions[currentIndex].b}</span>
+                    <span className="text-slate-400">=</span>
                   </div>
-                  <div className="border-t-2 md:border-t-0 md:border-l-2 border-slate-200 pt-3 md:pt-0 md:pl-6 lg:pl-8">
-                    <div className="text-[10px] md:text-xs lg:text-sm font-black text-amber-500 mb-1 uppercase tracking-widest flex items-center gap-2 justify-center md:justify-start">
-                      <Sparkles className="w-3 h-3 md:w-5 lg:w-6 md:h-5 lg:h-6" /> Récord
-                    </div>
-                    <div className="text-3xl md:text-4xl lg:text-5xl font-black text-amber-400">
-                      {highScore}
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex flex-col gap-2 md:gap-3 mt-auto">
-                  {errors.length > 0 && (
-                    <button
-                      onClick={startRetryErrors}
-                      className="w-full py-2 md:py-3 lg:py-4 bg-orange-400 text-white text-lg md:text-xl font-black rounded-xl md:rounded-2xl shadow-xl border-b-4 md:border-b-8 bg-gradient-to-r from-orange-400 to-amber-500 border-orange-600 hover:from-orange-500 hover:to-amber-600 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-2 md:gap-3"
-                    >
-                      <RotateCcw className="w-4 h-4 md:w-6 lg:w-8 md:h-4 lg:h-8" /> REPASAR FALLOS
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setStep('setup')}
-                    className="w-full py-2 md:py-3 lg:py-4 bg-indigo-400 text-white text-lg md:text-xl font-black rounded-xl md:rounded-2xl shadow-xl border-b-4 md:border-b-8 bg-gradient-to-r from-indigo-400 to-violet-500 border-indigo-600 hover:from-indigo-500 hover:to-violet-600 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-2 md:gap-3"
+                  {/* Input display box */}
+                  <motion.div
+                    key={currentIndex}
+                    initial={{ scale: 0.85, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`
+                      w-24 sm:w-36 md:w-44 h-12 sm:h-16 md:h-20 text-2xl sm:text-4xl md:text-5xl font-black rounded-xl sm:rounded-2xl border-2 sm:border-4 flex items-center justify-center shadow-inner transition-colors
+                      ${feedback 
+                        ? feedback.type === 'correct' 
+                          ? 'bg-emerald-100 text-emerald-700 border-emerald-300' 
+                          : 'bg-rose-100 text-rose-700 border-rose-300'
+                        : userInput 
+                          ? 'bg-indigo-50 text-indigo-700 border-indigo-300' 
+                          : 'bg-slate-50 text-slate-300 border-slate-200'
+                      }
+                    `}
                   >
-                    <Home className="w-4 h-4 md:w-6 lg:w-8 md:h-4 lg:h-8" /> INICIO
-                  </button>
+                    {feedback 
+                      ? feedback.type === 'correct' 
+                        ? userInput 
+                        : feedback.correctAnswer 
+                      : (userInput || '?')
+                    }
+                  </motion.div>
+
+                  {/* Instant Feedback indicator */}
+                  <div className="h-6 sm:h-8 mt-1.5 flex items-center justify-center">
+                    {feedback && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`text-xs sm:text-base font-black px-3 py-0.5 rounded-full ${
+                          feedback.type === 'correct' 
+                            ? 'bg-emerald-500 text-white' 
+                            : 'bg-rose-500 text-white'
+                        }`}
+                      >
+                        {feedback.message} {feedback.type === 'incorrect' && `(${questions[currentIndex].a} × ${questions[currentIndex].b} = ${feedback.correctAnswer})`}
+                      </motion.div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Right Area: Keypad & Action */}
+                <div className="w-full max-w-sm landscape:max-w-xs md:landscape:max-w-sm flex flex-col justify-center min-h-0 flex-shrink-0">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                      <motion.button
+                        key={num}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => !feedback && setUserInput(prev => prev.length < 3 ? prev + num : prev)}
+                        disabled={feedback !== null}
+                        className="h-10 sm:h-12 md:h-14 text-lg sm:text-2xl font-black rounded-xl bg-white text-indigo-700 border-b-2 sm:border-b-3 border-indigo-100 hover:bg-indigo-50 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all"
+                      >
+                        {num}
+                      </motion.button>
+                    ))}
+
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      onClick={() => !feedback && setUserInput(prev => prev.slice(0, -1))}
+                      disabled={feedback !== null}
+                      className="h-10 sm:h-12 md:h-14 text-base sm:text-lg font-black rounded-xl bg-rose-50 text-rose-600 border-b-2 sm:border-b-3 border-rose-100 hover:bg-rose-100 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all flex items-center justify-center"
+                      title="Borrar"
+                    >
+                      ⌫
+                    </motion.button>
+
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      onClick={() => !feedback && setUserInput(prev => prev.length < 3 ? prev + '0' : prev)}
+                      disabled={feedback !== null}
+                      className="h-10 sm:h-12 md:h-14 text-lg sm:text-2xl font-black rounded-xl bg-white text-indigo-700 border-b-2 sm:border-b-3 border-indigo-100 hover:bg-indigo-50 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all"
+                    >
+                      0
+                    </motion.button>
+
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      onClick={() => !feedback && setUserInput('')}
+                      disabled={feedback !== null || userInput === ''}
+                      className="h-10 sm:h-12 md:h-14 text-xs sm:text-sm font-bold rounded-xl bg-slate-100 text-slate-500 border-b-2 sm:border-b-3 border-slate-200 hover:bg-slate-200 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all disabled:opacity-50"
+                      title="Limpiar"
+                    >
+                      C
+                    </motion.button>
+                  </div>
+
+                  {/* Submit / Next Button */}
+                  <div className="mt-1.5 sm:mt-2.5">
+                    {!feedback ? (
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleAnswer()}
+                        disabled={userInput === ''}
+                        className={`
+                          w-full py-2.5 sm:py-3 rounded-xl font-black text-sm sm:text-lg shadow-md border-b-2 sm:border-b-4 transition-all flex items-center justify-center gap-1.5
+                          ${userInput !== '' 
+                            ? 'bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700 active:translate-y-0.5 active:border-b-0' 
+                            : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
+                          }
+                        `}
+                      >
+                        <span>COMPROBAR</span>
+                        <Check className="w-4 h-4" />
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={nextQuestion}
+                        className={`
+                          w-full py-2.5 sm:py-3 rounded-xl font-black text-sm sm:text-lg text-white shadow-md border-b-2 sm:border-b-4 transition-all flex items-center justify-center gap-1.5
+                          ${feedback.type === 'correct' 
+                            ? 'bg-emerald-500 border-emerald-700 hover:bg-emerald-600 active:translate-y-0.5' 
+                            : 'bg-rose-500 border-rose-700 hover:bg-rose-600 active:translate-y-0.5'
+                          }
+                        `}
+                      >
+                        <span>SIGUIENTE ({autoAdvanceSeconds}s)</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+
+          {/* SCREEN 3: RESULTS */}
+          {step === 'results' && (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-5xl h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl p-3 sm:p-5 md:p-6 border-2 sm:border-4 md:border-8 border-emerald-100 flex flex-col justify-between overflow-hidden"
+            >
+              {/* Header */}
+              <div className="text-center pb-2 flex-shrink-0">
+                <div className="inline-flex p-2 bg-amber-50 rounded-2xl border border-amber-200 mb-1">
+                  <Trophy className="w-6 h-6 sm:w-10 sm:h-10 text-amber-500" />
+                </div>
+                <h2 className="text-xl sm:text-3xl font-black text-slate-800 leading-tight">
+                  {errors.length === 0 ? '¡Puntuación Perfecta! 🌟' : '¡Excelente Trabajo! 👏'}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                  {selectedTables.length === 1 
+                    ? `Tabla del ${selectedTables[0]}` 
+                    : `${selectedTables.length} tablas practicadas (${selectedTables.join(', ')})`
+                  }
+                </p>
               </div>
 
-              {/* Right Side: Error List */}
-              {errors.length > 0 ? (
-                <div className="flex-1 flex flex-col min-h-0 landscape:w-1/2">
-                  <h3 className="text-lg md:text-xl font-black text-rose-400 mb-2 md:mb-4 flex items-center gap-2 md:gap-3 flex-shrink-0">
-                    <XCircle className="w-5 h-5 md:w-6 lg:w-8" /> ¡A practicar!
-                  </h3>
-                  <div className="grid grid-cols-1 gap-2 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
-                    {errors.map((error, idx) => (
-                      <div key={idx} className="bg-rose-50 p-2 md:p-3 lg:p-4 rounded-xl md:rounded-2xl flex justify-between items-center border-2 border-rose-100 shadow-sm">
-                        <span className="text-xs md:text-lg lg:text-xl font-black text-slate-600">{error.question} = ?</span>
-                        <span className="text-xs md:text-lg lg:text-xl font-black text-rose-500">¡Es {error.correct}!</span>
+              {/* Main Body */}
+              <div className="flex-1 min-h-0 flex flex-col landscape:flex-row gap-3 sm:gap-6 items-stretch justify-center overflow-hidden py-1">
+                
+                {/* Score Summary Box */}
+                <div className="flex-1 flex flex-col justify-around bg-slate-50 p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-inner text-center">
+                  <div className="flex justify-around items-center">
+                    <div>
+                      <div className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider">Aciertos</div>
+                      <div className="text-3xl sm:text-5xl md:text-6xl font-black text-indigo-600 leading-none mt-1">
+                        {score}<span className="text-base sm:text-2xl text-slate-400">/{questions.length}</span>
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="h-10 w-px bg-slate-200" />
+
+                    <div>
+                      <div className="text-[10px] sm:text-xs font-black text-amber-500 uppercase tracking-wider flex items-center justify-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        <span>Récord</span>
+                      </div>
+                      <div className="text-3xl sm:text-5xl md:text-6xl font-black text-amber-500 leading-none mt-1">
+                        {highScore}
+                      </div>
+                    </div>
+                  </div>
+
+                  {errors.length === 0 && (
+                    <div className="mt-2 bg-emerald-100 text-emerald-800 text-xs sm:text-sm font-bold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>¡Sin ningún error! Eres un genio de las matemáticas.</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Errors Review list or celebratory card */}
+                {errors.length > 0 ? (
+                  <div className="flex-1 min-h-0 flex flex-col bg-rose-50/70 p-3 rounded-2xl border border-rose-200">
+                    <div className="text-xs sm:text-sm font-black text-rose-700 uppercase tracking-wider flex items-center gap-1.5 mb-2 flex-shrink-0">
+                      <XCircle className="w-4 h-4 text-rose-500" />
+                      <span>Para repasar ({errors.length}):</span>
+                    </div>
+                    
+                    <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
+                      {errors.map((err, idx) => (
+                        <div key={idx} className="bg-white p-1.5 sm:p-2 rounded-xl flex justify-between items-center text-xs sm:text-sm font-bold border border-rose-100 shadow-2xs">
+                          <span className="text-slate-700">{err.question}</span>
+                          <span className="text-rose-600 font-black">Es {err.correct}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200 text-center">
+                    <span className="text-3xl sm:text-5xl mb-2">🎉</span>
+                    <h3 className="text-base sm:text-xl font-black text-emerald-700">¡Reto Superado!</h3>
+                    <p className="text-xs sm:text-sm text-emerald-600">Sigue así y dominarás todas las tablas.</p>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex gap-2 sm:gap-3 flex-shrink-0">
+                {errors.length > 0 && (
+                  <button
+                    onClick={startRetryErrors}
+                    className="flex-1 py-2.5 sm:py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl sm:rounded-2xl font-black text-xs sm:text-base shadow-md border-b-3 border-amber-700 hover:brightness-105 active:translate-y-0.5 flex items-center justify-center gap-1.5"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>REPASAR FALLOS</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setStep('setup')}
+                  className="flex-1 py-2.5 sm:py-3.5 bg-indigo-600 text-white rounded-xl sm:rounded-2xl font-black text-xs sm:text-base shadow-md border-b-3 border-indigo-800 hover:bg-indigo-700 active:translate-y-0.5 flex items-center justify-center gap-1.5"
+                >
+                  <Home className="w-4 h-4" />
+                  <span>NUEVA PARTIDA</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* SCREEN 4: LEARN (MODO APRENDIZAJE) */}
+          {step === 'learn' && (
+            <motion.div
+              key="learn"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="w-full max-w-5xl h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl p-3 sm:p-5 md:p-6 border-2 sm:border-4 md:border-8 border-sky-100 flex flex-col justify-between overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    if (learningTable) setLearningTable(null);
+                    else setStep('setup');
+                  }}
+                  className="p-1.5 sm:p-2 bg-slate-50 text-slate-500 hover:text-slate-700 rounded-xl border border-slate-200 transition-all shadow-xs active:scale-95"
+                  title="Volver"
+                >
+                  <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+
+                <h2 className="text-base sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-indigo-600">
+                  {learningTable ? `Tabla del ${learningTable}` : 'Modo Estudio: Tablas del 2 al 9'}
+                </h2>
+
+                <button
+                  onClick={() => setStep('setup')}
+                  className="p-1.5 sm:p-2 bg-slate-50 text-slate-500 hover:text-slate-700 rounded-xl border border-slate-200 transition-all shadow-xs active:scale-95"
+                  title="Inicio"
+                >
+                  <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              {!learningTable ? (
+                <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-2 text-center overflow-hidden">
+                  <p className="text-xs sm:text-sm text-slate-400 font-bold mb-3">
+                    Elige qué tabla quieres repasar:
+                  </p>
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3 w-full max-w-xl">
+                    {AVAILABLE_TABLES.map((num) => {
+                      const theme = TABLE_THEMES[num];
+                      return (
+                        <motion.button
+                          key={num}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setLearningTable(num)}
+                          className={`
+                            py-3 sm:py-5 rounded-xl sm:rounded-2xl font-black transition-all border-b-3 sm:border-b-4 shadow-sm flex flex-col items-center justify-center
+                            ${theme.bg} ${theme.text} ${theme.border} hover:brightness-95
+                          `}
+                        >
+                          <span className="text-2xl sm:text-4xl leading-none">{num}</span>
+                          <span className="text-[10px] sm:text-xs opacity-75 mt-0.5">Tabla del {num}</span>
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center bg-emerald-50 rounded-[2rem] p-6 landscape:w-1/2">
-                  <div className="p-4 bg-white rounded-full shadow-lg mb-4">
-                    <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+                <div className="flex-1 min-h-0 flex flex-col justify-between py-2 overflow-hidden">
+                  {/* Display 10 operations in 2 columns of 5 (fits on screen with 0 scroll) */}
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 flex-1 min-h-0">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((multiplier) => (
+                      <div
+                        key={multiplier}
+                        className="bg-slate-50/80 px-2.5 sm:px-4 py-1 sm:py-2 rounded-xl border border-slate-200 flex items-center justify-between text-xs sm:text-base md:text-lg font-black shadow-2xs"
+                      >
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-slate-600">
+                          <span className="text-indigo-600">{learningTable}</span>
+                          <span className="text-slate-400">×</span>
+                          <span>{multiplier}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-300">=</span>
+                          <span className="text-emerald-600 text-sm sm:text-lg md:text-xl">
+                            {learningTable * multiplier}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <h3 className="text-xl md:text-3xl font-black text-emerald-600 mb-1">¡Perfecto!</h3>
-                  <p className="text-emerald-500 text-sm md:text-lg font-bold">¡No has tenido fallos! ✨</p>
+
+                  <div className="pt-2 flex-shrink-0">
+                    <button
+                      onClick={() => setLearningTable(null)}
+                      className="w-full py-2 sm:py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-black text-xs sm:text-sm border-b-2 sm:border-b-3 border-sky-700 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span>ELEGIR OTRA TABLA</span>
+                    </button>
+                  </div>
                 </div>
               )}
-            </div>
-          </motion.div>
-        )}
-        {step === 'learn' && (
-          <motion.div 
-            key="learn"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="max-w-4xl w-full h-[92dvh] bg-white rounded-3xl md:rounded-[3rem] shadow-2xl p-4 md:p-6 lg:p-10 border-4 md:border-8 border-sky-100 relative overflow-hidden flex flex-col landscape:max-w-7xl landscape:h-[92vh]"
-          >
-            <div className="flex justify-between items-center mb-4 md:mb-6 flex-shrink-0">
-              <button 
-                onClick={() => {
-                  if (learningTable) setLearningTable(null);
-                  else setStep('setup');
-                }}
-                className="p-2 md:p-4 bg-white text-slate-400 rounded-xl md:rounded-2xl hover:bg-slate-50 transition-all border-b-2 md:border-b-4 border-slate-100 active:translate-y-1 active:border-b-0 shadow-sm"
-              >
-                <ArrowLeft className="w-5 h-5 md:w-8 md:h-8" />
-              </button>
-              <h2 className="text-xl md:text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600">
-                {learningTable ? `Tabla del ${learningTable}` : 'Modo Aprendizaje'}
-                <span className="ml-2 text-[10px] md:text-sm font-mono text-slate-300 vertical-middle opacity-50">v{APP_VERSION}</span>
-              </h2>
-              <button 
-                onClick={() => setStep('setup')}
-                className="p-2 md:p-4 bg-white text-slate-400 rounded-xl md:rounded-2xl hover:bg-slate-50 transition-all border-b-2 md:border-b-4 border-slate-100 active:translate-y-1 active:border-b-0 shadow-sm"
-              >
-                <Home className="w-5 h-5 md:w-8 md:h-8" />
-              </button>
-            </div>
 
-            {!learningTable ? (
-              <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto custom-scrollbar">
-                <p className="text-slate-400 text-lg md:text-xl mb-4 md:mb-6 font-medium">Pulsa una tabla para estudiarla ✨</p>
-                <div className="grid grid-cols-3 gap-3 md:gap-4 lg:gap-6 w-full max-w-2xl px-4 pb-8">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num, idx) => (
-                    <motion.button
-                      key={num}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setLearningTable(num)}
-                      className={`
-                        py-4 md:py-6 lg:py-8 text-3xl md:text-5xl lg:text-6xl font-black rounded-xl md:rounded-3xl transition-all border-b-4 md:border-b-8
-                        ${tableColors[idx]} border-slate-200 shadow-lg shadow-slate-100
-                      `}
-                    >
-                      {num}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 flex-1 overflow-y-auto pr-2 md:pr-4 custom-scrollbar pb-4 md:pb-6">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                    <motion.div
-                      key={num}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: num * 0.05 }}
-                      className={`p-2 md:p-4 lg:p-5 rounded-xl md:rounded-2xl flex justify-between items-center border-2 border-slate-100 shadow-sm ${tableColors[learningTable - 1].split(' ')[0]} bg-opacity-30`}
-                    >
-                      <div className="flex items-center gap-2 md:gap-4 lg:gap-6">
-                        <span className="text-lg md:text-2xl lg:text-3xl font-black text-slate-400">{learningTable}</span>
-                        <span className="text-sm md:text-xl font-bold text-slate-300">×</span>
-                        <span className="text-lg md:text-2xl lg:text-3xl font-black text-slate-500">{num}</span>
-                      </div>
-                      <div className="flex items-center gap-2 md:gap-4 lg:gap-6">
-                        <span className="text-sm md:text-xl font-bold text-slate-300">=</span>
-                        <span className="text-xl md:text-3xl lg:text-4xl font-black text-indigo-500">{learningTable * num}</span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-                <div className="mt-2 md:mt-4 pt-2 md:pt-4 border-t border-slate-50">
-                  <button 
-                    onClick={() => setLearningTable(null)}
-                    className="w-full py-2 md:py-4 lg:py-5 bg-sky-400 text-white text-lg md:text-xl lg:text-2xl font-black rounded-xl md:rounded-3xl shadow-xl border-b-4 md:border-b-8 lg:border-b-[10px] border-sky-600 hover:bg-sky-500 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-2 md:gap-3"
-                  >
-                    <BookOpen className="w-5 h-5 md:w-6 lg:w-8" /> ELEGIR OTRA TABLA
-                  </button>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-      `}</style>
     </div>
   );
 }
