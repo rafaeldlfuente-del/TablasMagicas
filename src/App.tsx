@@ -31,7 +31,7 @@ import { OrientationLockOverlay } from './components/OrientationLockOverlay';
 type Step = 'setup' | 'quiz' | 'results' | 'learn';
 type Mode = 'order' | 'reverse' | 'random';
 
-const APP_VERSION = '1.0.8';
+const APP_VERSION = '1.0.9';
 
 interface Question {
   a: number;
@@ -46,6 +46,7 @@ interface ErrorRecord {
 }
 
 const AVAILABLE_TABLES = [2, 3, 4, 5, 6, 7, 8, 9];
+const MULTIPLIERS = [2, 3, 4, 5, 6, 7, 8, 9];
 
 const TABLE_THEMES: Record<number, { bg: string; text: string; border: string; activeBg: string; activeBorder: string }> = {
   2: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', activeBg: 'bg-amber-500 text-white', activeBorder: 'border-amber-700' },
@@ -133,13 +134,13 @@ export default function App() {
     let qList: Question[] = [];
     tables.forEach(table => {
       if (quizMode === 'reverse') {
-        // En orden inverso: 10 al 1
-        for (let i = 10; i >= 1; i--) {
+        // En orden inverso: 9 al 2 (sin 1 ni 10)
+        for (let i = 9; i >= 2; i--) {
           qList.push({ a: table, b: i, correct: table * i });
         }
       } else {
-        // En orden (1 al 10) o aleatorio (se mezclará después)
-        for (let i = 1; i <= 10; i++) {
+        // En orden (2 al 9) o aleatorio (se mezclará después, sin 1 ni 10)
+        for (let i = 2; i <= 9; i++) {
           qList.push({ a: table, b: i, correct: table * i });
         }
       }
@@ -455,7 +456,7 @@ export default function App() {
                           >
                             <ListOrdered className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                             <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">En orden</span>
-                            <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">1 al 10</span>
+                            <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">2 al 9</span>
                           </button>
 
                           <button
@@ -468,7 +469,7 @@ export default function App() {
                           >
                             <Undo2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                             <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Inverso</span>
-                            <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">10 al 1</span>
+                            <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">9 al 2</span>
                           </button>
 
                           <button
@@ -538,7 +539,7 @@ export default function App() {
                         <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 fill-current" />
                         <span>
                           {selectedTables.length > 0 
-                            ? `¡A JUGAR! (${selectedTables.length * 10} preguntas)` 
+                            ? `¡A JUGAR! (${selectedTables.length * MULTIPLIERS.length} preguntas)` 
                             : 'Elige al menos 1 tabla'
                           }
                         </span>
@@ -922,9 +923,9 @@ export default function App() {
                 </div>
               ) : (
                 <div className="flex-1 min-h-0 flex flex-col justify-between py-2 sm:py-3 overflow-hidden">
-                  {/* Display 10 operations in 2 columns of 5 */}
+                  {/* Display 8 operations (2 through 9) in 2 columns of 4 */}
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 flex-1 min-h-0">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((multiplier) => (
+                    {MULTIPLIERS.map((multiplier) => (
                       <div
                         key={multiplier}
                         className="bg-slate-50/80 px-2.5 sm:px-4 md:px-5 py-1 sm:py-2 md:py-3 rounded-xl md:rounded-2xl border border-slate-200 flex items-center justify-between text-xs sm:text-base md:text-xl font-black shadow-2xs"
