@@ -25,11 +25,13 @@ import {
   Check,
   Zap
 } from 'lucide-react';
+import { useDeviceOrientation } from './utils/useDeviceOrientation';
+import { OrientationLockOverlay } from './components/OrientationLockOverlay';
 
 type Step = 'setup' | 'quiz' | 'results' | 'learn';
 type Mode = 'order' | 'reverse' | 'random';
 
-const APP_VERSION = '1.0.7';
+const APP_VERSION = '1.0.8';
 
 interface Question {
   a: number;
@@ -75,6 +77,9 @@ export default function App() {
       }
     },
   });
+
+  // Device orientation lock & responsive detection
+  const { deviceType, isOrientationValid, expectedOrientation } = useDeviceOrientation();
 
   // Version check fallback
   useEffect(() => {
@@ -305,431 +310,444 @@ export default function App() {
   }, [step, feedback, handleAnswer, nextQuestion]);
 
   return (
-    <div className="h-[100dvh] w-full max-h-[100dvh] bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 font-sans text-slate-800 p-2 sm:p-3 md:p-4 lg:p-5 flex flex-col items-center justify-center overflow-hidden select-none">
-      <div className="w-full max-w-6xl xl:max-w-7xl h-full max-h-full flex flex-col items-center justify-center">
-        <AnimatePresence mode="wait">
+    <>
+      {!isOrientationValid && (
+        <OrientationLockOverlay
+          deviceType={deviceType}
+          expectedOrientation={expectedOrientation}
+        />
+      )}
+      <div className="h-[100dvh] w-full max-h-[100dvh] bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 font-sans text-slate-800 p-1 sm:p-2 md:p-3 lg:p-4 xl:p-5 flex flex-col items-center justify-center overflow-hidden select-none">
+        <div className="w-full h-full max-h-full flex flex-col items-center justify-center max-w-[1920px]">
+          <AnimatePresence mode="wait">
 
-          {/* SCREEN 1: SETUP */}
-          {step === 'setup' && (
-            <motion.div
-              key="setup"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              className="w-full h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.25rem] shadow-xl md:shadow-2xl p-3 sm:p-4 md:p-5 lg:p-6 border-2 sm:border-4 md:border-8 border-indigo-100 flex flex-col justify-between gap-2 sm:gap-3 overflow-hidden"
-            >
-              {/* Top Bar / Header */}
-              <div className="flex items-center justify-between gap-2 pb-2 sm:pb-2.5 border-b border-slate-100 flex-shrink-0">
-                <div className="flex items-center gap-2.5 sm:gap-3">
-                  <span className="text-2xl sm:text-3xl md:text-4xl">🪄</span>
-                  <div>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 leading-tight">
-                      ¡Tablas Mágicas!
-                    </h1>
-                    <p className="text-[11px] sm:text-xs md:text-sm text-slate-400 font-medium hidden sm:block">
-                      Practica tus tablas de multiplicar sin conexión ✨
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setStep('learn')}
-                    className="py-1.5 sm:py-2 px-3 sm:px-4 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 transition-all shadow-xs active:scale-95"
-                    title="Ver tablas de multiplicar"
-                  >
-                    <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-sky-600" />
-                    <span>Modo Estudio</span>
-                  </button>
-                  <span className="text-[10px] sm:text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 font-bold">
-                    v{APP_VERSION}
-                  </span>
-                </div>
-              </div>
-
-              {/* Main Content Area: Responsive side-by-side on landscape (tablet), stacked on portrait */}
-              <div className="flex-1 min-h-0 py-1 flex flex-col landscape:flex-row gap-2.5 sm:gap-3.5 md:gap-4 lg:gap-5 overflow-hidden">
-                
-                {/* Left Panel: 1. Tables Selection (Del 2 al 9) */}
-                <div className="flex flex-col bg-slate-50/90 p-2.5 sm:p-3.5 md:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex-shrink-0 landscape:w-[57%] landscape:h-full justify-between">
-                  <div className="flex items-center justify-between mb-1.5 sm:mb-2 md:mb-2.5 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
-                        1. Elige las tablas (2 al 9)
-                      </span>
-                      {selectedTables.length > 0 && (
-                        <span className="bg-indigo-100 text-indigo-700 font-black text-[10px] sm:text-xs md:text-sm px-2.5 py-0.5 rounded-full">
-                          {selectedTables.length} {selectedTables.length === 1 ? 'tabla' : 'tablas'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <button
-                        onClick={selectAllTables}
-                        className="text-[11px] sm:text-xs md:text-sm font-bold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs hover:bg-indigo-50 transition-colors active:scale-95"
-                      >
-                        Todas
-                      </button>
-                      <button
-                        onClick={clearTables}
-                        className="text-[11px] sm:text-xs md:text-sm font-bold text-rose-500 hover:text-rose-700 bg-white px-2.5 py-1 rounded-lg border border-rose-100 shadow-2xs hover:bg-rose-50 transition-colors active:scale-95"
-                      >
-                        Limpiar
-                      </button>
+            {/* SCREEN 1: SETUP */}
+            {step === 'setup' && (
+              <motion.div
+                key="setup"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                className="w-full h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.25rem] shadow-xl md:shadow-2xl p-3 sm:p-4 md:p-5 lg:p-6 border-2 sm:border-4 md:border-8 border-indigo-100 flex flex-col justify-between gap-2 sm:gap-3 overflow-hidden"
+              >
+                {/* Top Bar / Header */}
+                <div className="flex items-center justify-between gap-2 pb-2 sm:pb-2.5 border-b border-slate-100 flex-shrink-0">
+                  <div className="flex items-center gap-2.5 sm:gap-3">
+                    <span className="text-2xl sm:text-3xl md:text-4xl">🪄</span>
+                    <div>
+                      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 leading-tight">
+                        ¡Tablas Mágicas!
+                      </h1>
+                      <p className="text-[11px] sm:text-xs md:text-sm text-slate-400 font-medium hidden sm:block">
+                        Practica tus tablas de multiplicar sin conexión ✨
+                      </p>
                     </div>
                   </div>
 
-                  {/* 8 Table Buttons: 4 cols x 2 rows, filling vertical height in landscape */}
-                  <div className="grid grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 landscape:flex-1 landscape:min-h-0 landscape:grid-rows-2">
-                    {AVAILABLE_TABLES.map((num) => {
-                      const isSelected = selectedTables.includes(num);
-                      const theme = TABLE_THEMES[num];
-                      return (
-                        <motion.button
-                          key={num}
-                          whileTap={{ scale: 0.94 }}
-                          onClick={() => toggleTable(num)}
-                          className={`
-                            relative flex flex-col items-center justify-center rounded-xl sm:rounded-2xl font-black transition-all border-b-3 sm:border-b-4
-                            h-16 sm:h-20 md:h-22 landscape:h-full landscape:min-h-0
-                            ${isSelected 
-                              ? `${theme.activeBg} ${theme.activeBorder} shadow-md -translate-y-0.5` 
-                              : `${theme.bg} ${theme.text} ${theme.border} hover:brightness-95`
-                            }
-                          `}
-                        >
-                          <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl leading-none">
-                            {num}
-                          </span>
-                          <span className={`text-[10px] sm:text-xs md:text-sm font-bold mt-0.5 sm:mt-1 opacity-90 ${isSelected ? 'text-white' : 'text-slate-500'}`}>
-                            Tabla del {num}
-                          </span>
-                          {isSelected && (
-                            <span className="absolute top-1 right-1 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-white text-emerald-600 rounded-full flex items-center justify-center shadow-xs">
-                              <Check className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 stroke-[3]" />
-                            </span>
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Right Panel: Modes (2), Timer (3) and Launch CTA (4) */}
-                <div className="flex flex-col gap-2.5 sm:gap-3 md:gap-3.5 landscape:w-[43%] landscape:h-full landscape:justify-between flex-shrink-0">
-                  
-                  {/* Modes & Timer: 2 cols on tablet portrait, 1 col stacked on landscape */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 landscape:grid-cols-1 gap-2.5 sm:gap-3 landscape:flex-1 landscape:min-h-0">
-                    
-                    {/* 2. Mode of play */}
-                    <div className="bg-slate-50/90 p-2.5 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between gap-1.5 sm:gap-2">
-                      <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
-                        2. Modo de Juego
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 flex-1 items-stretch">
-                        <button
-                          onClick={() => setMode('order')}
-                          className={`py-2 sm:py-2.5 md:py-3 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
-                            mode === 'order'
-                              ? 'bg-emerald-500 text-white border-emerald-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <ListOrdered className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">En orden</span>
-                          <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">1 al 10</span>
-                        </button>
-
-                        <button
-                          onClick={() => setMode('reverse')}
-                          className={`py-2 sm:py-2.5 md:py-3 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
-                            mode === 'reverse'
-                              ? 'bg-amber-500 text-white border-amber-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <Undo2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Inverso</span>
-                          <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">10 al 1</span>
-                        </button>
-
-                        <button
-                          onClick={() => setMode('random')}
-                          className={`py-2 sm:py-2.5 md:py-3 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
-                            mode === 'random'
-                              ? 'bg-violet-500 text-white border-violet-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <Shuffle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Aleatorio</span>
-                          <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">Mezclado</span>
-                        </button>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {highScore > 0 && (
+                      <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-xl border border-amber-200 text-xs md:text-sm font-black">
+                        <Star className="w-4 h-4 fill-current text-amber-500" />
+                        <span>Récord: {highScore}</span>
                       </div>
-                    </div>
-
-                    {/* 3. Time Option */}
-                    <div className="bg-slate-50/90 p-2.5 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between gap-1.5 sm:gap-2">
-                      <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
-                        3. Tiempo Límite
-                      </span>
-                      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 flex-1 items-stretch">
-                        <button
-                          onClick={() => setIsTimedMode(false)}
-                          className={`py-2.5 sm:py-3 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
-                            !isTimedMode
-                              ? 'bg-sky-500 text-white border-sky-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <InfinityIcon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-xs sm:text-sm md:text-base font-bold">Sin tiempo</span>
-                        </button>
-
-                        <button
-                          onClick={() => setIsTimedMode(true)}
-                          className={`py-2.5 sm:py-3 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
-                            isTimedMode
-                              ? 'bg-rose-500 text-white border-rose-700 shadow-md -translate-y-0.5'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <Clock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                          <span className="text-xs sm:text-sm md:text-base font-bold">Con tiempo ({timeLimitSeconds}s)</span>
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* 4. Launch button */}
-                  <div className="flex-shrink-0">
-                    <motion.button
-                      whileHover={selectedTables.length > 0 ? { scale: 1.01 } : {}}
-                      whileTap={selectedTables.length > 0 ? { scale: 0.98 } : {}}
-                      onClick={() => selectedTables.length > 0 && startQuiz(selectedTables, mode)}
-                      disabled={selectedTables.length === 0}
-                      className={`
-                        w-full py-3.5 sm:py-4 md:py-4.5 lg:py-5 rounded-xl sm:rounded-2xl md:rounded-3xl text-base sm:text-xl md:text-2xl font-black transition-all shadow-lg border-b-3 sm:border-b-4 md:border-b-5 flex items-center justify-center gap-2 sm:gap-3
-                        ${selectedTables.length > 0
-                          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-700 hover:brightness-105 active:translate-y-1'
-                          : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
-                        }
-                      `}
-                    >
-                      <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 fill-current" />
-                      <span>
-                        {selectedTables.length > 0 
-                          ? `¡A JUGAR! (${selectedTables.length * 10} preguntas)` 
-                          : 'Elige al menos 1 tabla'
-                        }
-                      </span>
-                    </motion.button>
-                  </div>
-
-                </div>
-
-              </div>
-            </motion.div>
-          )}
-
-          {/* SCREEN 2: QUIZ */}
-          {step === 'quiz' && questions.length > 0 && (
-            <motion.div
-              key="quiz"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              className="w-full h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl p-3 sm:p-5 md:p-6 lg:p-8 border-2 sm:border-4 md:border-8 border-indigo-100 relative overflow-hidden flex flex-col justify-between"
-            >
-              {/* Progress bar at top */}
-              <div className="absolute top-0 left-0 w-full h-1.5 sm:h-2 md:h-2.5 bg-slate-100">
-                <motion.div 
-                  className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-
-              {/* Top Navigation Bar */}
-              <div className="flex justify-between items-center pt-1 pb-1.5 sm:pb-3 border-b border-slate-100 flex-shrink-0">
-                <button
-                  onClick={() => setStep('setup')}
-                  className="p-1.5 sm:p-2 md:p-3 bg-slate-50 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl md:rounded-2xl border border-slate-200 transition-all shadow-xs active:scale-95"
-                  title="Volver al inicio"
-                >
-                  <Home className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                </button>
-
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="bg-indigo-50 text-indigo-700 px-2.5 py-1 sm:px-3.5 sm:py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm md:text-base border border-indigo-200">
-                    Pregunta {currentIndex + 1} / {questions.length}
-                  </div>
-                  
-                  {isTimedMode && (
-                    <motion.div
-                      key={timeLeft}
-                      initial={{ scale: 1.15 }}
-                      animate={{ scale: 1 }}
-                      className={`px-2.5 py-1 sm:px-3.5 sm:py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm md:text-base flex items-center gap-1.5 border ${
-                        timeLeft <= 3 
-                          ? 'bg-rose-100 text-rose-600 border-rose-300 animate-pulse' 
-                          : 'bg-amber-50 text-amber-600 border-amber-200'
-                      }`}
-                    >
-                      <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                      <span>{timeLeft}s</span>
-                    </motion.div>
-                  )}
-                </div>
-
-                <div className="bg-emerald-50 text-emerald-700 px-2.5 py-1 sm:px-3.5 sm:py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm md:text-base flex items-center gap-1.5 border border-emerald-200">
-                  <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 fill-current text-emerald-500" />
-                  <span>{score}</span>
-                </div>
-              </div>
-
-              {/* Main Quiz Area */}
-              <div className="flex-1 min-h-0 py-2 sm:py-4 flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-5 md:gap-8 overflow-hidden">
-                
-                {/* Question Display & Result Preview */}
-                <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-center">
-                  <div className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-slate-800 flex items-center justify-center gap-2 sm:gap-4 md:gap-6 mb-2 sm:mb-4">
-                    <span>{questions[currentIndex].a}</span>
-                    <span className="text-indigo-500">×</span>
-                    <span>{questions[currentIndex].b}</span>
-                    <span className="text-slate-400">=</span>
-                  </div>
-
-                  {/* Input display box */}
-                  <motion.div
-                    key={currentIndex}
-                    initial={{ scale: 0.85, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className={`
-                      w-28 sm:w-36 md:w-52 h-14 sm:h-16 md:h-22 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black rounded-xl sm:rounded-2xl md:rounded-3xl border-2 sm:border-4 md:border-6 flex items-center justify-center shadow-inner transition-colors
-                      ${feedback 
-                        ? feedback.type === 'correct' 
-                          ? 'bg-emerald-100 text-emerald-700 border-emerald-300' 
-                          : 'bg-rose-100 text-rose-700 border-rose-300'
-                        : userInput 
-                          ? 'bg-indigo-50 text-indigo-700 border-indigo-300' 
-                          : 'bg-slate-50 text-slate-300 border-slate-200'
-                      }
-                    `}
-                  >
-                    {feedback 
-                      ? feedback.type === 'correct' 
-                        ? userInput 
-                        : feedback.correctAnswer 
-                      : (userInput || '?')
-                    }
-                  </motion.div>
-
-                  {/* Instant Feedback indicator */}
-                  <div className="h-6 sm:h-8 md:h-10 mt-2 flex items-center justify-center">
-                    {feedback && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`text-xs sm:text-base md:text-lg font-black px-4 py-1 rounded-full ${
-                          feedback.type === 'correct' 
-                            ? 'bg-emerald-500 text-white' 
-                            : 'bg-rose-500 text-white'
-                        }`}
-                      >
-                        {feedback.message} {feedback.type === 'incorrect' && `(${questions[currentIndex].a} × ${questions[currentIndex].b} = ${feedback.correctAnswer})`}
-                      </motion.div>
                     )}
+                    <button
+                      onClick={() => setStep('learn')}
+                      className="py-1.5 sm:py-2 px-3 sm:px-4 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 transition-all shadow-xs active:scale-95"
+                      title="Ver tablas de multiplicar"
+                    >
+                      <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-sky-600" />
+                      <span>Modo Estudio</span>
+                    </button>
+                    <span className="text-[10px] sm:text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 font-bold">
+                      v{APP_VERSION}
+                    </span>
                   </div>
                 </div>
 
-                {/* Keypad & Action */}
-                <div className="w-full max-w-xs sm:max-w-sm md:max-w-md flex flex-col justify-center min-h-0 flex-shrink-0">
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                      <motion.button
-                        key={num}
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => !feedback && setUserInput(prev => prev.length < 3 ? prev + num : prev)}
-                        disabled={feedback !== null}
-                        className="h-11 sm:h-13 md:h-16 text-xl sm:text-2xl md:text-3xl font-black rounded-xl sm:rounded-2xl bg-white text-indigo-700 border-b-2 sm:border-b-4 border-indigo-100 hover:bg-indigo-50 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all"
-                      >
-                        {num}
-                      </motion.button>
-                    ))}
+                {/* Main Content Area: Responsive side-by-side on landscape (tablet), stacked on portrait */}
+                <div className="flex-1 min-h-0 py-1 flex flex-col landscape:flex-row gap-2.5 sm:gap-3.5 md:gap-4 lg:gap-5 overflow-hidden">
+                  
+                  {/* Left Panel: 1. Tables Selection (Del 2 al 9) */}
+                  <div className="flex flex-col bg-slate-50/90 p-2.5 sm:p-3.5 md:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex-shrink-0 landscape:w-[57%] landscape:h-full justify-between">
+                    <div className="flex items-center justify-between mb-1.5 sm:mb-2 md:mb-2.5 flex-shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
+                          1. Elige las tablas (2 al 9)
+                        </span>
+                        {selectedTables.length > 0 && (
+                          <span className="bg-indigo-100 text-indigo-700 font-black text-[10px] sm:text-xs md:text-sm px-2.5 py-0.5 rounded-full">
+                            {selectedTables.length} {selectedTables.length === 1 ? 'tabla' : 'tablas'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <button
+                          onClick={selectAllTables}
+                          className="text-[11px] sm:text-xs md:text-sm font-bold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs hover:bg-indigo-50 transition-colors active:scale-95"
+                        >
+                          Todas
+                        </button>
+                        <button
+                          onClick={clearTables}
+                          className="text-[11px] sm:text-xs md:text-sm font-bold text-rose-500 hover:text-rose-700 bg-white px-2.5 py-1 rounded-lg border border-rose-100 shadow-2xs hover:bg-rose-50 transition-colors active:scale-95"
+                        >
+                          Limpiar
+                        </button>
+                      </div>
+                    </div>
 
-                    <motion.button
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => !feedback && setUserInput(prev => prev.slice(0, -1))}
-                      disabled={feedback !== null}
-                      className="h-11 sm:h-13 md:h-16 text-base sm:text-xl md:text-2xl font-black rounded-xl sm:rounded-2xl bg-rose-50 text-rose-600 border-b-2 sm:border-b-4 border-rose-100 hover:bg-rose-100 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all flex items-center justify-center"
-                      title="Borrar"
-                    >
-                      ⌫
-                    </motion.button>
-
-                    <motion.button
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => !feedback && setUserInput(prev => prev.length < 3 ? prev + '0' : prev)}
-                      disabled={feedback !== null}
-                      className="h-11 sm:h-13 md:h-16 text-xl sm:text-2xl md:text-3xl font-black rounded-xl sm:rounded-2xl bg-white text-indigo-700 border-b-2 sm:border-b-4 border-indigo-100 hover:bg-indigo-50 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all"
-                    >
-                      0
-                    </motion.button>
-
-                    <motion.button
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => !feedback && setUserInput('')}
-                      disabled={feedback !== null || userInput === ''}
-                      className="h-11 sm:h-13 md:h-16 text-sm sm:text-base md:text-lg font-bold rounded-xl sm:rounded-2xl bg-slate-100 text-slate-500 border-b-2 sm:border-b-4 border-slate-200 hover:bg-slate-200 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all disabled:opacity-50"
-                      title="Limpiar"
-                    >
-                      C
-                    </motion.button>
+                    {/* 8 Table Buttons: 4 cols x 2 rows, filling vertical height in landscape */}
+                    <div className="grid grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 landscape:flex-1 landscape:min-h-0 landscape:grid-rows-2">
+                      {AVAILABLE_TABLES.map((num) => {
+                        const isSelected = selectedTables.includes(num);
+                        const theme = TABLE_THEMES[num];
+                        return (
+                          <motion.button
+                            key={num}
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => toggleTable(num)}
+                            className={`
+                              relative flex flex-col items-center justify-center rounded-xl sm:rounded-2xl font-black transition-all border-b-3 sm:border-b-4
+                              h-16 sm:h-20 md:h-22 landscape:h-full landscape:min-h-0
+                              ${isSelected 
+                                ? `${theme.activeBg} ${theme.activeBorder} shadow-md -translate-y-0.5` 
+                                : `${theme.bg} ${theme.text} ${theme.border} hover:brightness-95`
+                              }
+                            `}
+                          >
+                            <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl leading-none">
+                              {num}
+                            </span>
+                            <span className={`text-[10px] sm:text-xs md:text-sm font-bold mt-0.5 sm:mt-1 opacity-90 ${isSelected ? 'text-white' : 'text-slate-500'}`}>
+                              Tabla del {num}
+                            </span>
+                            {isSelected && (
+                              <span className="absolute top-1 right-1 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-white text-emerald-600 rounded-full flex items-center justify-center shadow-xs">
+                                <Check className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 stroke-[3]" />
+                              </span>
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  {/* Submit / Next Button */}
-                  <div className="mt-2 sm:mt-3">
-                    {!feedback ? (
+                  {/* Right Panel: Modes (2), Timer (3) and Launch CTA (4) */}
+                  <div className="flex flex-col gap-2.5 sm:gap-3 md:gap-3.5 landscape:w-[43%] landscape:h-full landscape:justify-between flex-shrink-0">
+                    
+                    {/* Modes & Timer: 2 cols on tablet portrait, 1 col stacked on landscape */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 landscape:grid-cols-1 gap-2.5 sm:gap-3 landscape:flex-1 landscape:min-h-0">
+                      
+                      {/* 2. Mode of play */}
+                      <div className="bg-slate-50/90 p-2.5 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between gap-1.5 sm:gap-2">
+                        <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
+                          2. Modo de Juego
+                        </span>
+                        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 flex-1 items-stretch">
+                          <button
+                            onClick={() => setMode('order')}
+                            className={`py-2 sm:py-2.5 md:py-3 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
+                              mode === 'order'
+                                ? 'bg-emerald-500 text-white border-emerald-700 shadow-md -translate-y-0.5'
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <ListOrdered className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                            <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">En orden</span>
+                            <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">1 al 10</span>
+                          </button>
+
+                          <button
+                            onClick={() => setMode('reverse')}
+                            className={`py-2 sm:py-2.5 md:py-3 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
+                              mode === 'reverse'
+                                ? 'bg-amber-500 text-white border-amber-700 shadow-md -translate-y-0.5'
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <Undo2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                            <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Inverso</span>
+                            <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">10 al 1</span>
+                          </button>
+
+                          <button
+                            onClick={() => setMode('random')}
+                            className={`py-2 sm:py-2.5 md:py-3 px-1 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex flex-col items-center justify-center gap-0.5 sm:gap-1 ${
+                              mode === 'random'
+                                ? 'bg-violet-500 text-white border-violet-700 shadow-md -translate-y-0.5'
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <Shuffle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                            <span className="text-[11px] sm:text-xs md:text-sm font-black leading-tight">Aleatorio</span>
+                            <span className="text-[9px] sm:text-[10px] md:text-xs opacity-80">Mezclado</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 3. Time Option */}
+                      <div className="bg-slate-50/90 p-2.5 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between gap-1.5 sm:gap-2">
+                        <span className="text-xs sm:text-sm md:text-base font-black text-slate-700 uppercase tracking-wider">
+                          3. Tiempo Límite
+                        </span>
+                        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 flex-1 items-stretch">
+                          <button
+                            onClick={() => setIsTimedMode(false)}
+                            className={`py-2.5 sm:py-3 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                              !isTimedMode
+                                ? 'bg-sky-500 text-white border-sky-700 shadow-md -translate-y-0.5'
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <InfinityIcon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                            <span className="text-xs sm:text-sm md:text-base font-bold">Sin tiempo</span>
+                          </button>
+
+                          <button
+                            onClick={() => setIsTimedMode(true)}
+                            className={`py-2.5 sm:py-3 px-2 rounded-xl text-center font-black transition-all border-b-2 sm:border-b-3 flex items-center justify-center gap-1.5 sm:gap-2 ${
+                              isTimedMode
+                                ? 'bg-rose-500 text-white border-rose-700 shadow-md -translate-y-0.5'
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <Clock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                            <span className="text-xs sm:text-sm md:text-base font-bold">Con tiempo ({timeLimitSeconds}s)</span>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* 4. Launch button */}
+                    <div className="flex-shrink-0">
                       <motion.button
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handleAnswer()}
-                        disabled={userInput === ''}
+                        whileHover={selectedTables.length > 0 ? { scale: 1.01 } : {}}
+                        whileTap={selectedTables.length > 0 ? { scale: 0.98 } : {}}
+                        onClick={() => selectedTables.length > 0 && startQuiz(selectedTables, mode)}
+                        disabled={selectedTables.length === 0}
                         className={`
-                          w-full py-2.5 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl font-black text-sm sm:text-lg md:text-xl shadow-md border-b-2 sm:border-b-4 md:border-b-5 transition-all flex items-center justify-center gap-2
-                          ${userInput !== '' 
-                            ? 'bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700 active:translate-y-0.5 active:border-b-0' 
+                          w-full py-3.5 sm:py-4 md:py-4.5 lg:py-5 rounded-xl sm:rounded-2xl md:rounded-3xl text-base sm:text-xl md:text-2xl font-black transition-all shadow-lg border-b-3 sm:border-b-4 md:border-b-5 flex items-center justify-center gap-2 sm:gap-3
+                          ${selectedTables.length > 0
+                            ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white border-emerald-700 hover:brightness-105 active:translate-y-1'
                             : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
                           }
                         `}
                       >
-                        <span>COMPROBAR</span>
-                        <Check className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        whileTap={{ scale: 0.98 }}
-                        onClick={nextQuestion}
-                        className={`
-                          w-full py-2.5 sm:py-3.5 md:py-4 rounded-xl sm:rounded-2xl font-black text-sm sm:text-lg md:text-xl text-white shadow-md border-b-2 sm:border-b-4 md:border-b-5 transition-all flex items-center justify-center gap-2
-                          ${feedback.type === 'correct' 
-                            ? 'bg-emerald-500 border-emerald-700 hover:bg-emerald-600 active:translate-y-0.5' 
-                            : 'bg-rose-500 border-rose-700 hover:bg-rose-600 active:translate-y-0.5'
+                        <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 fill-current" />
+                        <span>
+                          {selectedTables.length > 0 
+                            ? `¡A JUGAR! (${selectedTables.length * 10} preguntas)` 
+                            : 'Elige al menos 1 tabla'
                           }
-                        `}
-                      >
-                        <span>SIGUIENTE ({autoAdvanceSeconds}s)</span>
-                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </span>
                       </motion.button>
+                    </div>
+
+                  </div>
+
+                </div>
+              </motion.div>
+            )}
+
+            {/* SCREEN 2: QUIZ */}
+            {step === 'quiz' && questions.length > 0 && (
+              <motion.div
+                key="quiz"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                className="w-full h-full max-h-full bg-white rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl p-3 sm:p-5 md:p-6 lg:p-8 border-2 sm:border-4 md:border-8 border-indigo-100 relative overflow-hidden flex flex-col justify-between"
+              >
+                {/* Progress bar at top */}
+                <div className="absolute top-0 left-0 w-full h-1.5 sm:h-2 md:h-2.5 bg-slate-100">
+                  <motion.div 
+                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+
+                {/* Top Navigation Bar */}
+                <div className="flex justify-between items-center pt-1 pb-1.5 sm:pb-3 border-b border-slate-100 flex-shrink-0">
+                  <button
+                    onClick={() => setStep('setup')}
+                    className="p-1.5 sm:p-2 md:p-3 bg-slate-50 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl md:rounded-2xl border border-slate-200 transition-all shadow-xs active:scale-95"
+                    title="Volver al inicio"
+                  >
+                    <Home className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                  </button>
+
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="bg-indigo-50 text-indigo-700 px-2.5 py-1 sm:px-3.5 sm:py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm md:text-base border border-indigo-200">
+                      Pregunta {currentIndex + 1} / {questions.length}
+                    </div>
+                    
+                    {isTimedMode && (
+                      <motion.div
+                        key={timeLeft}
+                        initial={{ scale: 1.15 }}
+                        animate={{ scale: 1 }}
+                        className={`px-2.5 py-1 sm:px-3.5 sm:py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm md:text-base flex items-center gap-1.5 border ${
+                          timeLeft <= 3 
+                            ? 'bg-rose-100 text-rose-600 border-rose-300 animate-pulse' 
+                            : 'bg-amber-50 text-amber-600 border-amber-200'
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                        <span>{timeLeft}s</span>
+                      </motion.div>
                     )}
+                  </div>
+
+                  <div className="bg-emerald-50 text-emerald-700 px-2.5 py-1 sm:px-3.5 sm:py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm md:text-base flex items-center gap-1.5 border border-emerald-200">
+                    <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 fill-current text-emerald-500" />
+                    <span>{score}</span>
                   </div>
                 </div>
 
-              </div>
-            </motion.div>
-          )}
+                {/* Main Quiz Area: Side-by-side on landscape (tablet / computer) */}
+                <div className="flex-1 min-h-0 py-2 sm:py-3 md:py-4 flex flex-col landscape:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-8 lg:gap-12 overflow-hidden">
+                  
+                  {/* Question Display & Result Preview */}
+                  <div className="flex-1 min-h-0 w-full landscape:w-[54%] flex flex-col items-center justify-center text-center landscape:h-full landscape:justify-around">
+                    <div className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-slate-800 flex items-center justify-center gap-2 sm:gap-4 md:gap-6 mb-2 sm:mb-4">
+                      <span>{questions[currentIndex].a}</span>
+                      <span className="text-indigo-500">×</span>
+                      <span>{questions[currentIndex].b}</span>
+                      <span className="text-slate-400">=</span>
+                    </div>
+
+                    {/* Input display box */}
+                    <motion.div
+                      key={currentIndex}
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className={`
+                        w-28 sm:w-36 md:w-52 lg:w-64 h-14 sm:h-16 md:h-22 lg:h-26 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black rounded-xl sm:rounded-2xl md:rounded-3xl border-2 sm:border-4 md:border-6 flex items-center justify-center shadow-inner transition-colors
+                        ${feedback 
+                          ? feedback.type === 'correct' 
+                            ? 'bg-emerald-100 text-emerald-700 border-emerald-300' 
+                            : 'bg-rose-100 text-rose-700 border-rose-300'
+                          : userInput 
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-300' 
+                            : 'bg-slate-50 text-slate-300 border-slate-200'
+                        }
+                      `}
+                    >
+                      {feedback 
+                        ? feedback.type === 'correct' 
+                          ? userInput 
+                          : feedback.correctAnswer 
+                        : (userInput || '?')
+                      }
+                    </motion.div>
+
+                    {/* Instant Feedback indicator */}
+                    <div className="h-6 sm:h-8 md:h-10 mt-2 flex items-center justify-center">
+                      {feedback && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`text-xs sm:text-base md:text-lg lg:text-xl font-black px-4 py-1 rounded-full ${
+                            feedback.type === 'correct' 
+                              ? 'bg-emerald-500 text-white' 
+                              : 'bg-rose-500 text-white'
+                          }`}
+                        >
+                          {feedback.message} {feedback.type === 'incorrect' && `(${questions[currentIndex].a} × ${questions[currentIndex].b} = ${feedback.correctAnswer})`}
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Keypad & Action */}
+                  <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg landscape:w-[46%] flex flex-col justify-center min-h-0 flex-shrink-0 landscape:h-full gap-2 md:gap-3">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                        <motion.button
+                          key={num}
+                          whileTap={{ scale: 0.92 }}
+                          onClick={() => !feedback && setUserInput(prev => prev.length < 3 ? prev + num : prev)}
+                          disabled={feedback !== null}
+                          className="h-11 sm:h-13 md:h-16 lg:h-18 xl:h-20 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black rounded-xl sm:rounded-2xl bg-white text-indigo-700 border-b-2 sm:border-b-4 border-indigo-100 hover:bg-indigo-50 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all"
+                        >
+                          {num}
+                        </motion.button>
+                      ))}
+
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => !feedback && setUserInput(prev => prev.slice(0, -1))}
+                        disabled={feedback !== null}
+                        className="h-11 sm:h-13 md:h-16 lg:h-18 xl:h-20 text-base sm:text-xl md:text-2xl lg:text-3xl font-black rounded-xl sm:rounded-2xl bg-rose-50 text-rose-600 border-b-2 sm:border-b-4 border-rose-100 hover:bg-rose-100 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all flex items-center justify-center"
+                        title="Borrar"
+                      >
+                        ⌫
+                      </motion.button>
+
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => !feedback && setUserInput(prev => prev.length < 3 ? prev + '0' : prev)}
+                        disabled={feedback !== null}
+                        className="h-11 sm:h-13 md:h-16 lg:h-18 xl:h-20 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black rounded-xl sm:rounded-2xl bg-white text-indigo-700 border-b-2 sm:border-b-4 border-indigo-100 hover:bg-indigo-50 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all"
+                      >
+                        0
+                      </motion.button>
+
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => !feedback && setUserInput('')}
+                        disabled={feedback !== null || userInput === ''}
+                        className="h-11 sm:h-13 md:h-16 lg:h-18 xl:h-20 text-sm sm:text-base md:text-lg font-bold rounded-xl sm:rounded-2xl bg-slate-100 text-slate-500 border-b-2 sm:border-b-4 border-slate-200 hover:bg-slate-200 shadow-xs active:translate-y-0.5 active:border-b-0 transition-all disabled:opacity-50"
+                        title="Limpiar"
+                      >
+                        C
+                      </motion.button>
+                    </div>
+
+                    {/* Submit / Next Button */}
+                    <div className="mt-1 sm:mt-2">
+                      {!feedback ? (
+                        <motion.button
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleAnswer()}
+                          disabled={userInput === ''}
+                          className={`
+                            w-full py-2.5 sm:py-3.5 md:py-4 lg:py-5 rounded-xl sm:rounded-2xl font-black text-sm sm:text-lg md:text-xl lg:text-2xl shadow-md border-b-2 sm:border-b-4 md:border-b-5 transition-all flex items-center justify-center gap-2
+                            ${userInput !== '' 
+                              ? 'bg-indigo-600 text-white border-indigo-800 hover:bg-indigo-700 active:translate-y-0.5 active:border-b-0' 
+                              : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
+                            }
+                          `}
+                        >
+                          <span>COMPROBAR</span>
+                          <Check className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
+                        </motion.button>
+                      ) : (
+                        <motion.button
+                          whileTap={{ scale: 0.98 }}
+                          onClick={nextQuestion}
+                          className={`
+                            w-full py-2.5 sm:py-3.5 md:py-4 lg:py-5 rounded-xl sm:rounded-2xl font-black text-sm sm:text-lg md:text-xl lg:text-2xl text-white shadow-md border-b-2 sm:border-b-4 md:border-b-5 transition-all flex items-center justify-center gap-2
+                            ${feedback.type === 'correct' 
+                              ? 'bg-emerald-500 border-emerald-700 hover:bg-emerald-600 active:translate-y-0.5' 
+                              : 'bg-rose-500 border-rose-700 hover:bg-rose-600 active:translate-y-0.5'
+                            }
+                          `}
+                        >
+                          <span>SIGUIENTE ({autoAdvanceSeconds}s)</span>
+                          <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
+                        </motion.button>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </motion.div>
+            )}
 
           {/* SCREEN 3: RESULTS */}
           {step === 'results' && (
@@ -944,5 +962,6 @@ export default function App() {
         </AnimatePresence>
       </div>
     </div>
+    </>
   );
 }
